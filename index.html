@@ -47,12 +47,12 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 </script>
 <style>
   :root {
-    --bg: #272e1d;
-    --bg-2: #333c25;
-    --surface: #404a2e;
-    --surface-2: #505b3a;
-    --border: #687149;
-    --border-strong: #7d875c;
+    --bg: #353d28;
+    --bg-2: #3f4830;
+    --surface: #475032;
+    --surface-2: #58633e;
+    --border: #717a4f;
+    --border-strong: #859061;
     --gold: #d4b85e;
     --gold-soft: #b89844;
     --gold-glow: rgba(212, 184, 94, 0.22);
@@ -602,6 +602,130 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     padding: 8px;
     margin-top: 8px;
   }
+
+  /* ============== LOGIN PROFILE PICKER (etapa 1) ============== */
+  .login-profiles {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 24px 0 16px;
+    flex-wrap: wrap;
+  }
+
+  .login-profile-card {
+    background: rgba(212, 184, 94, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 22px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    min-width: 130px;
+  }
+
+  .login-profile-card:hover {
+    background: rgba(212, 184, 94, 0.12);
+    border-color: var(--gold-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .login-profile-card:active {
+    transform: translateY(0);
+  }
+
+  .login-profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--surface);
+    border: 2px solid var(--gold-soft);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .login-profile-name {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--text);
+  }
+
+  .login-other-btn {
+    background: none;
+    border: none;
+    color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    padding: 12px;
+    margin-top: 12px;
+    transition: color 0.18s;
+  }
+
+  .login-other-btn:hover {
+    color: var(--gold-soft);
+  }
+
+  /* ============== LOGIN STEP 2 (senha) ============== */
+  .login-back-btn {
+    background: none;
+    border: none;
+    color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-bottom: 18px;
+    align-self: flex-start;
+    transition: color 0.18s;
+  }
+
+  .login-back-btn:hover {
+    color: var(--gold-soft);
+  }
+
+  .login-step2-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .login-step2-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--surface);
+    border: 2px solid var(--gold);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  .login-step2-name {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gold);
+  }
+
+  /* Mobile: cards menores */
+  @media (max-width: 480px) {
+    .login-profile-card { min-width: 110px; padding: 14px 16px; }
+    .login-profile-avatar { width: 70px; height: 70px; }
+    .login-profile-name { font-size: 15px; }
+  }
+  /* ============== END LOGIN PROFILE PICKER ============== */
 
   .login-mode-toggle:hover {
     color: var(--gold);
@@ -2802,6 +2926,52 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     font-style: normal;
   }
 
+  .cal-scope-toggle {
+    display: flex;
+    gap: 6px;
+    margin: 14px 0;
+    padding: 4px;
+    background: var(--surface);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .cal-scope-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--text-2);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .cal-scope-btn:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .cal-scope-btn.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(212, 184, 94, 0.3);
+  }
+
+  @media (max-width: 600px) {
+    .cal-scope-toggle { flex-direction: column; }
+    .cal-scope-btn { flex: none; width: 100%; }
+  }
+
   .cal-legend-vip {
     color: var(--gold);
   }
@@ -2848,6 +3018,61 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     .cal-cell-day { font-size: 11px; }
     .cal-cell-name { display: none; } /* só mostra ícones em mobile */
   }
+  /* ============== CAMPAIGN PERIOD BANDS (faixas coloridas no calendário) ============== */
+  .cal-cell-periods {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0 4px;
+  }
+
+  .cal-cell-period {
+    height: 14px;
+    color: #fff;
+    font-size: 9px;
+    line-height: 14px;
+    padding: 0 5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+    border-radius: 0;
+  }
+
+  .cal-cell-period.period-start {
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+    padding-left: 8px;
+  }
+
+  .cal-cell-period.period-end {
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+  }
+
+  .cal-cell-period-name {
+    font-weight: 600;
+    font-family: 'Barlow', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  /* Sample na legenda */
+  .cal-period-sample {
+    display: inline-block;
+    width: 18px;
+    height: 8px;
+    background: var(--gold-soft);
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
+  /* Mobile: faixa mais fina */
+  @media (max-width: 720px) {
+    .cal-cell-period { height: 11px; line-height: 11px; font-size: 8px; padding: 0 3px; }
+    .cal-cell-period-name { font-size: 8px; }
+  }
+  /* ============== END CAMPAIGN PERIOD BANDS ============== */
+
   /* ============== END CAMPAIGN CALENDAR ============== */
 
   /* ============== GRUPO VIP ============== */
@@ -2963,6 +3188,167 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     margin-right: 4px;
   }
   /* ============== END GRUPO VIP ============== */
+
+  /* ============== VIP SUB-ABAS (Por Campanha / Conteúdo Exclusivo) ============== */
+  .vip-subtab-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 4px;
+    background: var(--bg);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .vip-subtab-btn {
+    flex: 1;
+    padding: 10px 14px;
+    background: transparent;
+    color: var(--text-2);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .vip-subtab-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .vip-subtab-btn.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(212, 184, 94, 0.3);
+  }
+
+  .vip-subtab-count {
+    background: rgba(0, 0, 0, 0.18);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .vip-subtab-btn.active .vip-subtab-count {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* Vinheta de campanha dentro do VIP */
+  .vip-camp-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    border-left: 3px solid var(--gold-soft);
+  }
+
+  .vip-camp-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vip-camp-icon {
+    font-size: 16px;
+  }
+
+  .vip-camp-name {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .vip-camp-tag {
+    padding: 2px 8px;
+    background: var(--surface);
+    color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    border-radius: 3px;
+  }
+
+  /* Empty hint quando nenhuma campanha existe */
+  .vip-empty-hint {
+    background: rgba(212, 184, 94, 0.06);
+    border-left: 3px solid var(--gold-soft);
+    padding: 18px 20px;
+    border-radius: 3px;
+    margin: 8px 0;
+  }
+
+  .vip-empty-hint strong {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .vip-empty-hint p {
+    margin: 0;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
+  /* Conteúdo exclusivo VIP — header */
+  .vip-exclusive-section {
+    background: var(--bg);
+    border: 1px solid var(--gold-soft);
+    border-radius: 4px;
+    padding: 16px;
+  }
+
+  .vip-exclusive-header {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vip-exclusive-header > span {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .vip-exclusive-header p {
+    margin: 0;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.5;
+  }
+
+  /* Mobile: sub-abas empilham */
+  @media (max-width: 600px) {
+    .vip-subtab-nav { flex-direction: column; }
+    .vip-subtab-btn { width: 100%; justify-content: flex-start; }
+  }
+  /* ============== END VIP SUB-ABAS ============== */
 
   .status-badge {
     display: inline-flex;
@@ -4959,21 +5345,64 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
         <div class="brand-tag">Central de Campanhas</div>
       </div>
     </div>
-    <div class="login-eyebrow">Acesso Restrito</div>
-    <h1 class="login-title">Bem-vinda de <em>volta</em></h1>
-    <p class="login-sub" id="loginSub">Entre com seu email corporativo para acessar as campanhas</p>
 
-    <div class="login-error" id="loginError"></div>
+    <!-- ETAPA 1: Seletor de perfil (DEFAULT) -->
+    <div id="loginStep1">
+      <div class="login-eyebrow">Acesso Restrito</div>
+      <h1 class="login-title">Quem está <em>entrando?</em></h1>
+      <p class="login-sub">Escolha seu perfil pra continuar.</p>
 
-    <div class="login-form">
-      <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
-      <input type="password" id="loginPassword" placeholder="senha" autocomplete="current-password">
-      <button class="login-submit" id="loginSubmit">Entrar</button>
+      <div class="login-profiles">
+        <button class="login-profile-card" data-profile-email="larissalorettoscarpa@gmail.com" data-profile-name="Larissa">
+          <div class="login-profile-avatar" id="loginAvatarLarissa"></div>
+          <div class="login-profile-name">Larissa</div>
+        </button>
+        <button class="login-profile-card" data-profile-email="lorraynelorettoscarpa@gmail.com" data-profile-name="Lorrayne">
+          <div class="login-profile-avatar" id="loginAvatarLorrayne"></div>
+          <div class="login-profile-name">Lorrayne</div>
+        </button>
+      </div>
+
+      <button class="login-other-btn" id="loginOtherBtn">Outro email →</button>
     </div>
 
-    <button class="login-mode-toggle" id="loginModeToggle" style="display: none;">
-      Esqueci minha senha
-    </button>
+    <!-- ETAPA 2: Senha pro perfil escolhido -->
+    <div id="loginStep2" style="display: none;">
+      <button class="login-back-btn" id="loginBackBtn" type="button">← Trocar perfil</button>
+
+      <div class="login-step2-profile">
+        <div class="login-step2-avatar" id="loginStep2Avatar"></div>
+        <div class="login-step2-name" id="loginStep2Name">—</div>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+
+      <div class="login-form">
+        <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password">
+        <button class="login-submit" id="loginSubmit">Entrar</button>
+      </div>
+
+      <button class="login-mode-toggle" id="loginModeToggle" style="display: none;">
+        Esqueci minha senha
+      </button>
+    </div>
+
+    <!-- ETAPA 3: Email + senha (modo "outro email") -->
+    <div id="loginStep3" style="display: none;">
+      <button class="login-back-btn" id="loginBackBtn3" type="button">← Voltar</button>
+
+      <div class="login-eyebrow">Outro acesso</div>
+      <h1 class="login-title">Entre com seu <em>email</em></h1>
+      <p class="login-sub" id="loginSub">Para acesso administrativo ou outro usuário autorizado.</p>
+
+      <div class="login-error" id="loginError3"></div>
+
+      <div class="login-form">
+        <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+        <input type="password" id="loginPassword3" placeholder="senha" autocomplete="current-password">
+        <button class="login-submit" id="loginSubmit3">Entrar</button>
+      </div>
+    </div>
 
     <div class="login-foot">Loretto Scarpa · Sistema Interno</div>
   </div>
@@ -5685,10 +6114,66 @@ async function firebaseSignOut() {
 function showLoginScreen() {
   document.getElementById('welcomeScreen')?.classList.remove('show');
   document.getElementById('loginScreen')?.classList.add('show');
-  // Clear form
+  // Reset pra step 1 (seletor)
+  goToLoginStep(1);
+  // Limpa todos os campos
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
+  const pwd3 = document.getElementById('loginPassword3');
+  if (pwd3) pwd3.value = '';
+  ['loginError', 'loginError3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '';
+  });
+  // Carrega avatares no seletor
+  populateLoginAvatars();
+}
+
+function populateLoginAvatars() {
+  // Coloca os avatares b64 do DEFAULT_USER_PHOTOS nos cards
+  const aLari = document.getElementById('loginAvatarLarissa');
+  const aLor = document.getElementById('loginAvatarLorrayne');
+  if (aLari && DEFAULT_USER_PHOTOS.larissa) {
+    aLari.style.backgroundImage = `url(${DEFAULT_USER_PHOTOS.larissa})`;
+  }
+  if (aLor && DEFAULT_USER_PHOTOS.lorrayne) {
+    aLor.style.backgroundImage = `url(${DEFAULT_USER_PHOTOS.lorrayne})`;
+  }
+}
+
+function goToLoginStep(step) {
+  const s1 = document.getElementById('loginStep1');
+  const s2 = document.getElementById('loginStep2');
+  const s3 = document.getElementById('loginStep3');
+  if (s1) s1.style.display = step === 1 ? '' : 'none';
+  if (s2) s2.style.display = step === 2 ? '' : 'none';
+  if (s3) s3.style.display = step === 3 ? '' : 'none';
+
+  // Foca no campo apropriado
+  setTimeout(() => {
+    if (step === 2) document.getElementById('loginPassword')?.focus();
+    if (step === 3) document.getElementById('loginEmail')?.focus();
+  }, 50);
+}
+
+// Email pré-selecionado quando escolhe perfil
+let _selectedProfileEmail = '';
+
+function selectLoginProfile(email, name) {
+  _selectedProfileEmail = email;
+  // Atualiza UI da etapa 2
+  const nameEl = document.getElementById('loginStep2Name');
+  const avatarEl = document.getElementById('loginStep2Avatar');
+  if (nameEl) nameEl.textContent = name;
+  if (avatarEl) {
+    const role = AUTHORIZED_USERS[email];
+    const photo = DEFAULT_USER_PHOTOS[role];
+    if (photo) avatarEl.style.backgroundImage = `url(${photo})`;
+  }
+  // Limpa erro e senha
+  document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').textContent = '';
+  goToLoginStep(2);
 }
 
 function hideLoginScreen() {
@@ -5696,17 +6181,21 @@ function hideLoginScreen() {
 }
 
 async function handleLogin() {
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  // Step 2: usa email pré-selecionado
+  const email = (_selectedProfileEmail || '').trim().toLowerCase();
   const password = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
   const submit = document.getElementById('loginSubmit');
 
-  if (!email || !password) {
-    errEl.textContent = 'Preencha email e senha';
+  if (!email) {
+    errEl.textContent = 'Selecione um perfil primeiro';
+    goToLoginStep(1);
     return;
   }
-
-  // Pre-check authorization
+  if (!password) {
+    errEl.textContent = 'Digite sua senha';
+    return;
+  }
   if (!AUTHORIZED_USERS[email]) {
     errEl.textContent = 'Email não autorizado';
     return;
@@ -5725,8 +6214,38 @@ async function handleLogin() {
     errEl.textContent = result.message;
     return;
   }
+  // Auth state change handler take it from here
+}
 
-  // Auth state change handler will take it from here
+// Step 3: "outro email" — fluxo antigo
+async function handleLoginOther() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword3').value;
+  const errEl = document.getElementById('loginError3');
+  const submit = document.getElementById('loginSubmit3');
+
+  if (!email || !password) {
+    errEl.textContent = 'Preencha email e senha';
+    return;
+  }
+  if (!AUTHORIZED_USERS[email]) {
+    errEl.textContent = 'Email não autorizado';
+    return;
+  }
+
+  submit.disabled = true;
+  submit.textContent = 'Entrando...';
+  errEl.textContent = '';
+
+  const result = await firebaseLogin(email, password);
+
+  submit.disabled = false;
+  submit.textContent = 'Entrar';
+
+  if (!result.success) {
+    errEl.textContent = result.message;
+    return;
+  }
 }
 
 
@@ -5807,7 +6326,8 @@ function migrateModel(m) {
     recorded: !!v.recorded,
     edited: !!v.edited,
     posted: !!v.posted,
-    publishDate: v.publishDate || ''
+    publishDate: v.publishDate || '',
+    linkedCampaignId: v.linkedCampaignId || null
   }));
   m.reels = m.reels.map(r => ({
     id: r.id || ('r_' + Math.random().toString(36).slice(2, 8)),
@@ -5815,7 +6335,8 @@ function migrateModel(m) {
     recorded: !!r.recorded,
     edited: !!r.edited,
     posted: !!r.posted,
-    publishDate: r.publishDate || ''
+    publishDate: r.publishDate || '',
+    linkedCampaignId: r.linkedCampaignId || null
   }));
   m.photos = m.photos.map(p => ({
     id: p.id || ('p_' + Math.random().toString(36).slice(2, 8)),
@@ -5823,7 +6344,8 @@ function migrateModel(m) {
     recorded: !!p.recorded,
     edited: !!p.edited,
     posted: !!p.posted,
-    publishDate: p.publishDate || ''
+    publishDate: p.publishDate || '',
+    linkedCampaignId: p.linkedCampaignId || null
   }));
   m.polls = m.polls.map(p => ({
     id: p.id || ('q_' + Math.random().toString(36).slice(2, 8)),
@@ -5831,7 +6353,8 @@ function migrateModel(m) {
     recorded: !!p.recorded,  // criada
     edited: !!p.edited,      // revisada
     posted: !!p.posted,      // postada
-    publishDate: p.publishDate || ''
+    publishDate: p.publishDate || '',
+    linkedCampaignId: p.linkedCampaignId || null
   }));
   // Categoria sempre 'Campanhas' (única) — estrutura legada
   if (!m.category) m.category = 'Campanhas';
@@ -6394,13 +6917,22 @@ function renderRemessaView() {
             <span class="export-menu-label">Excel <em>(.xls · todas as campanhas)</em></span>
           </button>
           <div class="export-menu-divider"></div>
-          <button class="export-menu-item" data-export="pdf-month">
+          <button class="export-menu-item" data-export="pdf-plan">
+            <span class="export-menu-icon">📋</span>
+            <span class="export-menu-label">Plano do Mês <em>(por campanha · pra equipe imprimir)</em></span>
+          </button>
+          <div class="export-menu-divider"></div>
+          <button class="export-menu-item" data-export="pdf-all">
             <span class="export-menu-icon">📅</span>
-            <span class="export-menu-label">Calendário do mês <em>(PDF horizontal)</em></span>
+            <span class="export-menu-label">Calendário Geral <em>(campanhas + VIP)</em></span>
+          </button>
+          <button class="export-menu-item" data-export="pdf-campanhas">
+            <span class="export-menu-icon">🎯</span>
+            <span class="export-menu-label">Calendário Campanhas <em>(só Instagram)</em></span>
           </button>
           <button class="export-menu-item" data-export="pdf-vip">
             <span class="export-menu-icon">💎</span>
-            <span class="export-menu-label">Calendário Grupo VIP <em>(PDF horizontal)</em></span>
+            <span class="export-menu-label">Calendário Grupo VIP <em>(só WhatsApp)</em></span>
           </button>
         </div>
         <!-- Hidden alias buttons for programmatic access (kept for compatibility) -->
@@ -6510,8 +7042,10 @@ function renderRemessaView() {
         exportDropdown.classList.remove('open');
         const action = btn.dataset.export;
         if (action === 'excel') handleExportCSV();
-        else if (action === 'pdf-month') handleExportCalendarPDF(false);
-        else if (action === 'pdf-vip') handleExportCalendarPDF(true);
+        else if (action === 'pdf-plan') handleExportPlanoMesPDF();
+        else if (action === 'pdf-all') handleExportCalendarPDF('all');
+        else if (action === 'pdf-campanhas') handleExportCalendarPDF('campanhas');
+        else if (action === 'pdf-vip') handleExportCalendarPDF('vip');
       };
     });
   }
@@ -6951,7 +7485,118 @@ let modalState = {};
 
 // Renderiza HTML de uma lista de conteúdos com checkboxes
 // kind = 'videos' | 'reels' | 'photos' | 'polls'
-function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dateMax) {
+// ============================================================
+// ABA CONTEÚDOS DO GRUPO VIP — sub-abas "Por Campanha" / "Conteúdo Exclusivo"
+// ============================================================
+
+// Pega sub-aba ativa (default: 'campanhas')
+function getVipSubTab() {
+  if (modalState._vipSubTab === 'exclusivo' || modalState._vipSubTab === 'campanhas') {
+    return modalState._vipSubTab;
+  }
+  return 'campanhas';
+}
+
+// Filtra itens VIP por campanha vinculada (linkedCampaignId)
+function filterVipItemsByCampaign(items, campaignId) {
+  return (items || []).filter(it => it.linkedCampaignId === campaignId);
+}
+
+// Filtra itens VIP exclusivos (sem linkedCampaignId)
+function filterVipItemsExclusive(items) {
+  return (items || []).filter(it => !it.linkedCampaignId);
+}
+
+// Renderiza a aba Conteúdos do Grupo VIP com sub-abas
+function renderVipContentTabsHTML(editable, monthMinDate, monthMaxDate) {
+  const subTab = getVipSubTab();
+
+  // Pega campanhas regulares do mesmo mês (pra listar em "Por Campanha")
+  const yd = getYearData(modalState.year);
+  const linkedCampaigns = yd.models
+    .filter(m => m.remessaId === modalState.remessaId
+              && m.month === modalState.month
+              && !m.isVipGroup
+              && m.id !== modalState.id)
+    .map(migrateModel);
+
+  return `
+    <div class="tab-conteudos">
+      <div class="vip-subtab-nav">
+        <button type="button" class="vip-subtab-btn ${subTab === 'campanhas' ? 'active' : ''}" data-vip-subtab="campanhas">
+          📂 Por Campanha
+          ${linkedCampaigns.length > 0 ? `<span class="vip-subtab-count">${linkedCampaigns.length}</span>` : ''}
+        </button>
+        <button type="button" class="vip-subtab-btn ${subTab === 'exclusivo' ? 'active' : ''}" data-vip-subtab="exclusivo">
+          💎 Conteúdo Exclusivo
+        </button>
+      </div>
+
+      <div class="vip-subtab-content">
+        ${subTab === 'campanhas'
+          ? renderVipByCampaignHTML(linkedCampaigns, editable, monthMinDate, monthMaxDate)
+          : renderVipExclusiveHTML(editable, monthMinDate, monthMaxDate)
+        }
+      </div>
+    </div>
+  `;
+}
+
+// Renderiza lista de campanhas com seus conteúdos VIP vinculados
+function renderVipByCampaignHTML(linkedCampaigns, editable, monthMinDate, monthMaxDate) {
+  if (linkedCampaigns.length === 0) {
+    return `
+      <div class="vip-empty-hint">
+        <strong>Nenhuma campanha cadastrada ainda em ${modalState.month}/${modalState.year}</strong>
+        <p>Crie campanhas regulares primeiro (botão <strong>+ Adicionar Campanha</strong> no mês).
+        Depois volte aqui e cadastre quais peças daquela campanha vão pro Grupo VIP do WhatsApp.</p>
+      </div>
+    `;
+  }
+
+  return linkedCampaigns.map(camp => {
+    const videosForCamp = filterVipItemsByCampaign(modalState.videos, camp.id);
+    const photosForCamp = filterVipItemsByCampaign(modalState.photos, camp.id);
+    const pollsForCamp  = filterVipItemsByCampaign(modalState.polls, camp.id);
+
+    return `
+      <div class="vip-camp-section" data-vip-camp-id="${camp.id}">
+        <div class="vip-camp-header">
+          <span class="vip-camp-icon">📂</span>
+          <span class="vip-camp-name">${escapeHtml(camp.name || 'Sem nome')}</span>
+          <span class="vip-camp-tag">campanha</span>
+        </div>
+
+        ${renderContentListHTML('videos', videosForCamp, '🎥 Vídeos', editable, monthMinDate, monthMaxDate, camp.id)}
+        ${renderContentListHTML('photos', photosForCamp, '📷 Fotos', editable, monthMinDate, monthMaxDate, camp.id)}
+        ${renderContentListHTML('polls',  pollsForCamp,  '📊 Enquetes', editable, monthMinDate, monthMaxDate, camp.id)}
+      </div>
+    `;
+  }).join('');
+}
+
+// Renderiza conteúdo exclusivo do VIP (sem linkedCampaignId)
+function renderVipExclusiveHTML(editable, monthMinDate, monthMaxDate) {
+  const exclusiveVideos = filterVipItemsExclusive(modalState.videos);
+  const exclusivePhotos = filterVipItemsExclusive(modalState.photos);
+  const exclusivePolls  = filterVipItemsExclusive(modalState.polls);
+
+  return `
+    <div class="vip-exclusive-section">
+      <div class="vip-exclusive-header">
+        <span>💎 Posts exclusivos do Grupo VIP</span>
+        <p>Conteúdo que <em>não</em> pertence a nenhuma campanha do Instagram. Ex: enquetes, recados da equipe, conteúdo de bastidores próprio do VIP.</p>
+      </div>
+
+      ${renderContentListHTML('videos', exclusiveVideos, '🎥 Vídeos', editable, monthMinDate, monthMaxDate, null)}
+      ${renderContentListHTML('photos', exclusivePhotos, '📷 Fotos', editable, monthMinDate, monthMaxDate, null)}
+      ${renderContentListHTML('polls',  exclusivePolls,  '📊 Enquetes', editable, monthMinDate, monthMaxDate, null)}
+    </div>
+  `;
+}
+
+function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dateMax, linkedCampaignId) {
+  // linkedCampaignId: undefined (campanhas regulares), null (VIP exclusivo), 'id' (VIP por campanha)
   // Singular pra placeholder
   const singularMap = { videos: 'vídeo', reels: 'reel', photos: 'foto', polls: 'enquete' };
   const singular = singularMap[kind] || 'item';
@@ -6962,31 +7607,32 @@ function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dat
 
   const itemsHTML = items.map((item, idx) => {
     const allDone = item.recorded && item.edited && item.posted;
+    const itemId = item.id;
     return `
-      <div class="content-item ${allDone ? 'all-done' : ''}" data-content-kind="${kind}" data-content-idx="${idx}">
+      <div class="content-item ${allDone ? 'all-done' : ''}" data-content-kind="${kind}" data-content-id="${itemId}">
         <div class="content-item-row">
           <input class="content-item-name" type="text" placeholder="Nome ${kind === 'polls' ? 'da enquete' : 'do ' + singular}"
                  value="${escapeHtml(item.name || '')}"
-                 data-content-field="name" data-content-kind="${kind}" data-content-idx="${idx}"
+                 data-content-field="name" data-content-kind="${kind}" data-content-id="${itemId}"
                  ${!editable ? 'disabled' : ''}>
-          ${editable ? `<button class="content-item-remove" data-content-remove="${idx}" data-content-kind="${kind}" title="Remover">×</button>` : ''}
+          ${editable ? `<button class="content-item-remove" data-content-remove="${itemId}" data-content-kind="${kind}" title="Remover">×</button>` : ''}
         </div>
         <div class="content-item-checks">
           <label class="content-check ${item.recorded ? 'checked' : ''}">
             <input type="checkbox" ${item.recorded ? 'checked' : ''} ${!editable ? 'disabled' : ''}
-                   data-content-field="recorded" data-content-kind="${kind}" data-content-idx="${idx}">
+                   data-content-field="recorded" data-content-kind="${kind}" data-content-id="${itemId}">
             <span class="content-check-mark">✓</span>
             <span class="content-check-label">${labels.recorded}</span>
           </label>
           <label class="content-check ${item.edited ? 'checked' : ''}">
             <input type="checkbox" ${item.edited ? 'checked' : ''} ${!editable ? 'disabled' : ''}
-                   data-content-field="edited" data-content-kind="${kind}" data-content-idx="${idx}">
+                   data-content-field="edited" data-content-kind="${kind}" data-content-id="${itemId}">
             <span class="content-check-mark">✓</span>
             <span class="content-check-label">${labels.edited}</span>
           </label>
           <label class="content-check ${item.posted ? 'checked' : ''}">
             <input type="checkbox" ${item.posted ? 'checked' : ''} ${!editable ? 'disabled' : ''}
-                   data-content-field="posted" data-content-kind="${kind}" data-content-idx="${idx}">
+                   data-content-field="posted" data-content-kind="${kind}" data-content-id="${itemId}">
             <span class="content-check-mark">✓</span>
             <span class="content-check-label">${labels.posted}</span>
           </label>
@@ -6997,7 +7643,7 @@ function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dat
                    ${dateMin ? `min="${dateMin}"` : ''}
                    ${dateMax ? `max="${dateMax}"` : ''}
                    ${!editable ? 'disabled' : ''}
-                   data-content-field="publishDate" data-content-kind="${kind}" data-content-idx="${idx}">
+                   data-content-field="publishDate" data-content-kind="${kind}" data-content-id="${itemId}">
           </div>
         </div>
       </div>
@@ -7008,7 +7654,7 @@ function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dat
   const done = items.filter(i => i.recorded && i.edited && i.posted).length;
 
   return `
-    <div class="form-section content-section">
+    <div class="form-section content-section" data-link-campaign-id="${linkedCampaignId === null ? 'null' : (linkedCampaignId || '')}">
       <div class="form-section-label">
         ${sectionLabel}
         <span class="content-counter">${done}/${total}</span>
@@ -7016,7 +7662,7 @@ function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dat
       <div class="content-list" data-content-list="${kind}">
         ${itemsHTML || `<div class="content-empty">Nenhum${kind === 'polls' ? 'a' : ''} ${singular} adicionad${kind === 'polls' ? 'a' : 'o'} ainda.</div>`}
       </div>
-      ${editable ? `<button class="content-add-btn" data-content-add="${kind}">+ Adicionar ${singular}</button>` : ''}
+      ${editable ? `<button class="content-add-btn" data-content-add="${kind}" data-link-campaign="${linkedCampaignId === null ? 'null' : (linkedCampaignId || '')}">+ Adicionar ${singular}</button>` : ''}
     </div>
   `;
 }
@@ -7046,7 +7692,9 @@ function pickCampaignColor(id) {
 }
 
 // Retorna: { dayMap, totalScheduled, monthIdx, yearN, daysInMonth, firstWeekday }
-function buildMonthCalendarData(year, remessaId, monthName) {
+// Retorna dados do calendário do mês.
+// scope: 'all' (default) | 'campanhas' | 'vip'
+function buildMonthCalendarData(year, remessaId, monthName, scope = 'all') {
   const monthIdx = MONTHS_PT.indexOf(monthName);
   if (monthIdx < 0) return null;
 
@@ -7055,11 +7703,16 @@ function buildMonthCalendarData(year, remessaId, monthName) {
   const daysInMonth = lastDay.getDate();
   const firstWeekday = firstDay.getDay();
 
-  // Pega todas as campanhas do mês (regulares + VIP)
+  // Pega todas as campanhas do mês — filtra por scope
   const yd = getYearData(year);
-  const monthModels = yd.models
+  let monthModels = yd.models
     .filter(m => m.remessaId === remessaId && m.month === monthName)
     .map(migrateModel);
+
+  // Aplica filtro de escopo
+  if (scope === 'campanhas') monthModels = monthModels.filter(m => !m.isVipGroup);
+  else if (scope === 'vip') monthModels = monthModels.filter(m => !!m.isVipGroup);
+  // 'all' não filtra
 
   // Mapeia dia → array de itens, com origem (campanha/VIP)
   const dayMap = {};
@@ -7098,16 +7751,52 @@ function buildMonthCalendarData(year, remessaId, monthName) {
     });
   });
 
+  // Coleta períodos das campanhas (faixa colorida nos dias vigentes)
+  // Só pra escopo 'all' e 'campanhas' (VIP é sempre o mês inteiro)
+  const campaignPeriods = [];
+  if (scope !== 'vip') {
+    monthModels.forEach(m => {
+      if (m.isVipGroup) return; // VIP não tem período
+      if (!m.campaignStart || !m.campaignEnd) return;
+      const [yS, mS, dS] = m.campaignStart.split('-').map(Number);
+      const [yE, mE, dE] = m.campaignEnd.split('-').map(Number);
+      // Só aceita se ambas datas estão no mês
+      if (yS !== year || mS !== monthIdx + 1) return;
+      if (yE !== year || mE !== monthIdx + 1) return;
+      campaignPeriods.push({
+        id: m.id,
+        name: m.name || 'Sem nome',
+        startDay: dS,
+        endDay: dE,
+        color: pickCampaignColor(m.id)
+      });
+    });
+  }
+
   const totalScheduled = Object.values(dayMap).reduce((s, arr) => s + arr.length, 0);
-  return { dayMap, totalScheduled, monthIdx, yearN: year, daysInMonth, firstWeekday };
+  return { dayMap, totalScheduled, monthIdx, yearN: year, daysInMonth, firstWeekday, monthModels, campaignPeriods };
+}
+
+// Pega o scope salvo do localStorage (default: 'all')
+function getCalendarScope() {
+  try {
+    const saved = localStorage.getItem('loretto_camp_cal_scope');
+    if (saved === 'campanhas' || saved === 'vip' || saved === 'all') return saved;
+  } catch (_) {}
+  return 'all';
+}
+
+function setCalendarScope(scope) {
+  try { localStorage.setItem('loretto_camp_cal_scope', scope); } catch (_) {}
 }
 
 function renderCampaignCalendarHTML() {
   const yearN = modalState.year;
-  const data = buildMonthCalendarData(yearN, modalState.remessaId, modalState.month);
+  const scope = getCalendarScope();
+  const data = buildMonthCalendarData(yearN, modalState.remessaId, modalState.month, scope);
   if (!data) return '<div class="form-section"><p>Mês inválido</p></div>';
 
-  const { dayMap, totalScheduled, monthIdx, daysInMonth, firstWeekday } = data;
+  const { dayMap, totalScheduled, monthIdx, daysInMonth, firstWeekday, campaignPeriods } = data;
 
   // Constrói grid 7 colunas (Dom-Sab)
   const cells = [];
@@ -7116,11 +7805,26 @@ function renderCampaignCalendarHTML() {
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const items = dayMap[d] || [];
+    // Quais campanhas estão "rodando" nesse dia (período inclui d)
+    const periodsToday = (campaignPeriods || []).filter(p => d >= p.startDay && d <= p.endDay);
     const today = new Date();
     const isToday = today.getFullYear() === yearN && today.getMonth() === monthIdx && today.getDate() === d;
     cells.push(`
-      <div class="cal-cell ${isToday ? 'cal-cell-today' : ''} ${items.length > 0 ? 'cal-cell-has-items' : ''}">
+      <div class="cal-cell ${isToday ? 'cal-cell-today' : ''} ${(items.length > 0 || periodsToday.length > 0) ? 'cal-cell-has-items' : ''}">
         <div class="cal-cell-day">${d}</div>
+        ${periodsToday.length > 0 ? `
+          <div class="cal-cell-periods">
+            ${periodsToday.map(p => {
+              const isStart = d === p.startDay;
+              const isEnd = d === p.endDay;
+              return `<div class="cal-cell-period ${isStart ? 'period-start' : ''} ${isEnd ? 'period-end' : ''}"
+                       style="background: ${p.color};"
+                       title="${escapeHtml(p.name)} · ${p.startDay} → ${p.endDay}">
+                ${isStart ? `<span class="cal-cell-period-name">${escapeHtml(p.name)}</span>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+        ` : ''}
         <div class="cal-cell-items">
           ${items.map(it => {
             const kindLabel = { video: 'Vídeo', reel: 'Reel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
@@ -7139,26 +7843,46 @@ function renderCampaignCalendarHTML() {
 
   const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
+  // Hint específico por scope
+  const scopeHints = {
+    all: { tag: 'Mês inteiro · todas campanhas + VIP',
+           desc: 'Conteúdos de <strong>todas as campanhas</strong> e do <strong>Grupo VIP</strong> deste mês aparecem aqui. Itens VIP têm 💎.' },
+    campanhas: { tag: 'Só campanhas regulares',
+           desc: 'Só conteúdos das <strong>campanhas regulares</strong> (Instagram). Itens do Grupo VIP <em>não</em> aparecem nesse filtro.' },
+    vip: { tag: 'Só Grupo VIP',
+           desc: 'Só conteúdos do <strong>💎 Grupo VIP</strong> (WhatsApp). Posts antecipados pras vendedoras.' }
+  };
+  const currentHint = scopeHints[scope];
+
   return `
     <div class="form-section">
-      <div class="form-section-label">📅 Calendário · ${modalState.month}/${yearN} <span class="cal-scope-tag">Mês inteiro · todas campanhas + VIP</span></div>
-      <div class="form-section-hint">Conteúdos de <strong>todas as campanhas</strong> e do <strong>Grupo VIP</strong> deste mês aparecem aqui. Itens já postados ficam marcados em verde. Posts do Grupo VIP têm 💎.</div>
+      <div class="form-section-label">📅 Calendário · ${modalState.month}/${yearN} <span class="cal-scope-tag">${currentHint.tag}</span></div>
+      <div class="form-section-hint">${currentHint.desc}</div>
+
+      <div class="cal-scope-toggle" role="tablist">
+        <button class="cal-scope-btn ${scope === 'all' ? 'active' : ''}" data-cal-scope="all">📅 Geral</button>
+        <button class="cal-scope-btn ${scope === 'campanhas' ? 'active' : ''}" data-cal-scope="campanhas">🎯 Campanhas</button>
+        <button class="cal-scope-btn ${scope === 'vip' ? 'active' : ''}" data-cal-scope="vip">💎 Grupo VIP</button>
+      </div>
 
       ${totalScheduled === 0 ? `
         <div class="cal-empty-hint">
-          <strong>Nenhum item agendado ainda</strong>
-          <p>Vá na aba <strong>Conteúdos</strong> de qualquer campanha (ou do Grupo VIP), adicione os itens com data de publicação. Eles vão aparecer aqui automaticamente.</p>
+          <strong>Nenhum item ${scope === 'vip' ? 'do Grupo VIP ' : scope === 'campanhas' ? 'das campanhas ' : ''}agendado ainda</strong>
+          <p>Vá na aba <strong>Conteúdos</strong> ${scope === 'vip' ? 'do Grupo VIP' : scope === 'campanhas' ? 'das campanhas' : 'de qualquer campanha (ou do Grupo VIP)'}, adicione os itens com data de publicação.</p>
         </div>
-      ` : `
+      ` : ''}
+
+      ${(totalScheduled > 0 || (campaignPeriods && campaignPeriods.length > 0)) ? `
         <div class="cal-legend">
+          ${campaignPeriods && campaignPeriods.length > 0 && scope !== 'vip' ? '<span><span class="cal-period-sample"></span> Período da campanha</span>' : ''}
           <span><span class="cal-icon-sample">🎥</span> Vídeo</span>
-          <span><span class="cal-icon-sample">🎞</span> Reel</span>
-          <span><span class="cal-icon-sample">📷</span> Foto VIP</span>
-          <span><span class="cal-icon-sample">📊</span> Enquete VIP</span>
-          <span class="cal-legend-vip"><span class="cal-icon-sample">💎</span> Grupo VIP</span>
+          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">🎞</span> Reel</span>' : ''}
+          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📷</span> Foto VIP</span>' : ''}
+          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📊</span> Enquete VIP</span>' : ''}
+          ${scope === 'all' ? '<span class="cal-legend-vip"><span class="cal-icon-sample">💎</span> Grupo VIP</span>' : ''}
           <span class="cal-legend-posted"><span class="cal-icon-sample">✓</span> Postado</span>
         </div>
-      `}
+      ` : ''}
 
       <div class="campaign-calendar">
         <div class="cal-header">
@@ -7354,16 +8078,14 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
 
       ${isEdit ? `
         <!-- ABA: CONTEÚDOS (vídeos + reels com checkboxes de progresso) -->
-        <div class="tab-conteudos">
-          ${isVip ? `
-            ${renderContentListHTML('videos', modalState.videos || [], '🎥 Vídeos', editable, monthMinDate, monthMaxDate)}
-            ${renderContentListHTML('photos', modalState.photos || [], '📷 Fotos', editable, monthMinDate, monthMaxDate)}
-            ${renderContentListHTML('polls',  modalState.polls  || [], '📊 Enquetes', editable, monthMinDate, monthMaxDate)}
-          ` : `
+        ${isVip ? `
+          ${renderVipContentTabsHTML(editable, monthMinDate, monthMaxDate)}
+        ` : `
+          <div class="tab-conteudos">
             ${renderContentListHTML('videos', modalState.videos || [], '🎥 Vídeos', editable, monthMinDate, monthMaxDate)}
             ${renderContentListHTML('reels', modalState.reels || [], '🎞 Reels', editable, monthMinDate, monthMaxDate)}
-          `}
-        </div>
+          </div>
+        `}
 
         <!-- ABA: CALENDÁRIO (mostra todos os conteúdos com data de publicação no calendário do mês) -->
         <div class="tab-calendario">
@@ -7557,23 +8279,67 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
     };
   });
 
+  // ============== TOGGLE DE SCOPE DO CALENDÁRIO ==============
+  // Re-renderiza só a aba calendário (sem fechar modal)
+  const handleScopeToggle = (e) => {
+    e.preventDefault();
+    const btn = e.currentTarget;
+    const newScope = btn.dataset.calScope;
+    setCalendarScope(newScope);
+    // Re-renderiza só o conteúdo da aba calendário
+    const calWrapper = modal.querySelector('.tab-calendario');
+    if (calWrapper) {
+      calWrapper.innerHTML = renderCampaignCalendarHTML();
+      // Re-bind dos NOVOS botões
+      calWrapper.querySelectorAll('[data-cal-scope]').forEach(b => {
+        b.onclick = handleScopeToggle;
+      });
+    }
+  };
+  modal.querySelectorAll('[data-cal-scope]').forEach(btn => {
+    btn.onclick = handleScopeToggle;
+  });
+
   // ============== CONTENT LIST (Vídeos / Reels / Photos / Polls) ==============
   if (isEdit && editable) {
-    // Helper: re-renderiza apenas a seção dessa kind (sem fechar e reabrir o modal)
-    const rerenderContentSection = (kind) => {
-      const oldSection = modal.querySelector(`[data-content-list="${kind}"]`)?.closest('.content-section');
-      if (!oldSection) return;
-      // Calcula label e datas
-      const labelMap = { videos: '🎥 Vídeos', reels: '🎞 Reels', photos: '📷 Fotos', polls: '📊 Enquetes' };
-      const html = renderContentListHTML(kind, modalState[kind] || [], labelMap[kind] || kind, editable, monthMinDate, monthMaxDate);
-      // Substitui in-place
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      const newSection = tmp.firstElementChild;
-      oldSection.replaceWith(newSection);
-      // Re-bind handlers só dessa seção
-      bindContentListHandlers(newSection, kind);
-      // Atualiza badge de contagem total na aba
+    // Helper: re-renderiza a seção dessa kind (sem fechar e reabrir o modal)
+    // No VIP: re-renderiza a sub-aba inteira (porque uma kind pode ter várias seções, uma por campanha)
+    // Em campanhas regulares: re-renderiza só a seção dessa kind (mais leve)
+    const rerenderContentSection = (kind, linkedCampaignId) => {
+      const isVipModal = !!modalState.isVipGroup;
+
+      if (isVipModal) {
+        // VIP: re-renderiza a sub-aba inteira (mantém scroll/foco a ponto razoável)
+        const tabConteudos = modal.querySelector('.tab-conteudos');
+        if (!tabConteudos) return;
+        tabConteudos.outerHTML = renderVipContentTabsHTML(editable, monthMinDate, monthMaxDate);
+        // Re-bind tudo na nova sub-aba
+        const newTabConteudos = modal.querySelector('.tab-conteudos');
+        if (newTabConteudos) {
+          newTabConteudos.querySelectorAll('.content-section').forEach(section => {
+            const list = section.querySelector('[data-content-list]');
+            const k = list?.dataset.contentList;
+            if (k) bindContentListHandlers(section, k);
+          });
+          // Re-bind sub-tab buttons
+          newTabConteudos.querySelectorAll('[data-vip-subtab]').forEach(b => {
+            b.onclick = handleVipSubTabClick;
+          });
+        }
+      } else {
+        // Campanhas regulares: rerender só a seção dessa kind
+        const oldSection = modal.querySelector(`[data-content-list="${kind}"]`)?.closest('.content-section');
+        if (!oldSection) return;
+        const labelMap = { videos: '🎥 Vídeos', reels: '🎞 Reels', photos: '📷 Fotos', polls: '📊 Enquetes' };
+        const html = renderContentListHTML(kind, modalState[kind] || [], labelMap[kind] || kind, editable, monthMinDate, monthMaxDate);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        const newSection = tmp.firstElementChild;
+        oldSection.replaceWith(newSection);
+        bindContentListHandlers(newSection, kind);
+      }
+
+      // Atualiza badge de contagem total na aba (igual pro VIP e regular)
       const totalCount = (modalState.videos?.length || 0) + (modalState.reels?.length || 0)
                        + (modalState.photos?.length || 0) + (modalState.polls?.length || 0);
       const tabBtn = modal.querySelector('.modal-tab[data-tab="conteudos"]');
@@ -7592,6 +8358,31 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
       }
     };
 
+    // Handler do clique nas sub-abas VIP (Por Campanha / Conteúdo Exclusivo)
+    const handleVipSubTabClick = (e) => {
+      e.preventDefault();
+      const btn = e.currentTarget;
+      const newSubTab = btn.dataset.vipSubtab;
+      if (!newSubTab) return;
+      modalState._vipSubTab = newSubTab;
+      // Re-renderiza a sub-aba inteira
+      const tabConteudos = modal.querySelector('.tab-conteudos');
+      if (tabConteudos) {
+        tabConteudos.outerHTML = renderVipContentTabsHTML(editable, monthMinDate, monthMaxDate);
+        const newTabConteudos = modal.querySelector('.tab-conteudos');
+        if (newTabConteudos) {
+          newTabConteudos.querySelectorAll('.content-section').forEach(section => {
+            const list = section.querySelector('[data-content-list]');
+            const k = list?.dataset.contentList;
+            if (k) bindContentListHandlers(section, k);
+          });
+          newTabConteudos.querySelectorAll('[data-vip-subtab]').forEach(b => {
+            b.onclick = handleVipSubTabClick;
+          });
+        }
+      }
+    };
+
     // Helper: bind handlers de uma seção de conteúdo (vídeos/reels/photos/polls)
     const bindContentListHandlers = (section, kind) => {
       // Add
@@ -7599,13 +8390,21 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         btn.onclick = async () => {
           const k = btn.dataset.contentAdd;
           const prefix = { videos: 'v', reels: 'r', photos: 'p', polls: 'q' }[k] || 'i';
+          // Pega vínculo de campanha do botão (apenas no VIP — em campanhas regulares vai ser undefined)
+          const linkAttr = btn.dataset.linkCampaign;
+          let linkedCampaignId;
+          if (linkAttr === 'null' || linkAttr === '') linkedCampaignId = null; // VIP exclusivo
+          else if (linkAttr) linkedCampaignId = linkAttr;                      // VIP por campanha
+          else linkedCampaignId = null;                                        // campanha regular (não usa)
+
           const newItem = {
             id: prefix + '_' + Math.random().toString(36).slice(2, 8),
             name: '',
             recorded: false,
             edited: false,
             posted: false,
-            publishDate: ''
+            publishDate: '',
+            linkedCampaignId: linkedCampaignId
           };
           if (!Array.isArray(modalState[k])) modalState[k] = [];
           modalState[k].push(newItem);
@@ -7613,10 +8412,12 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
           rerenderContentSection(k);
-          // Foca o nome do item recém-criado
+          // Foca o nome do item recém-criado (último adicionado pra essa campanha)
           setTimeout(() => {
             const inputs = modal.querySelectorAll(`[data-content-list="${k}"] [data-content-field="name"]`);
-            const last = inputs[inputs.length - 1];
+            // Pega o último input visível
+            const visibleInputs = Array.from(inputs).filter(i => i.offsetParent !== null);
+            const last = visibleInputs[visibleInputs.length - 1] || inputs[inputs.length - 1];
             if (last) last.focus();
           }, 30);
         };
@@ -7627,10 +8428,14 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         btn.onclick = async (e) => {
           e.stopPropagation();
           const k = btn.dataset.contentKind;
-          const idx = parseInt(btn.dataset.contentRemove, 10);
+          const itemId = btn.dataset.contentRemove;
           const labelSing = { videos: 'vídeo', reels: 'reel', photos: 'foto', polls: 'enquete' }[k] || 'item';
           if (!confirm(`Remover ${k === 'polls' || k === 'photos' ? 'esta' : 'este'} ${labelSing}?`)) return;
-          modalState[k].splice(idx, 1);
+          // Remove pelo ID, não pelo índice (caso seja VIP filtrado por campanha)
+          const arr = modalState[k] || [];
+          const realIdx = arr.findIndex(it => it.id === itemId);
+          if (realIdx < 0) return;
+          arr.splice(realIdx, 1);
           showAutosaveStatus('saving');
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
@@ -7641,11 +8446,14 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
       // Field changes
       section.querySelectorAll('[data-content-field]').forEach(input => {
         const k = input.dataset.contentKind;
-        const idx = parseInt(input.dataset.contentIdx, 10);
+        const itemId = input.dataset.contentId;
         const field = input.dataset.contentField;
 
         const onChange = async () => {
-          if (!modalState[k] || !modalState[k][idx]) return;
+          const arr = modalState[k] || [];
+          const realIdx = arr.findIndex(it => it.id === itemId);
+          if (realIdx < 0) return;
+          const item = arr[realIdx];
           const value = input.type === 'checkbox' ? input.checked : input.value;
 
           // Validação extra: se for publishDate, valida intervalo do mês
@@ -7657,13 +8465,13 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
               const mNum = parseInt(mStr, 10);
               if (yNum !== modalState.year || mNum !== monthIdxValid + 1) {
                 showToast(`Data precisa estar dentro de ${modalState.month}/${modalState.year}`);
-                input.value = modalState[k][idx][field] || '';
+                input.value = item[field] || '';
                 return;
               }
             }
           }
 
-          modalState[k][idx][field] = value;
+          item[field] = value;
           showAutosaveStatus('saving');
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
@@ -7672,15 +8480,20 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           if (input.type === 'checkbox') {
             const label = input.closest('.content-check');
             if (label) label.classList.toggle('checked', value);
-            const item = modalState[k][idx];
             const allDone = item.recorded && item.edited && item.posted;
             const itemEl = input.closest('.content-item');
             if (itemEl) itemEl.classList.toggle('all-done', allDone);
-            // Atualiza counter
-            const list = modalState[k];
-            const done = list.filter(i => i.recorded && i.edited && i.posted).length;
+            // Atualiza counter (usa só itens dessa seção, considerando linkedCampaignId)
+            const sectionLinkAttr = section.dataset.linkCampaignId;
+            const filterFn = (it) => {
+              if (sectionLinkAttr === undefined || sectionLinkAttr === '') return true; // campanha regular
+              if (sectionLinkAttr === 'null') return !it.linkedCampaignId;
+              return it.linkedCampaignId === sectionLinkAttr;
+            };
+            const filteredList = arr.filter(filterFn);
+            const done = filteredList.filter(i => i.recorded && i.edited && i.posted).length;
             const counterEl = section.querySelector('.content-counter');
-            if (counterEl) counterEl.textContent = `${done}/${list.length}`;
+            if (counterEl) counterEl.textContent = `${done}/${filteredList.length}`;
           }
         };
 
@@ -7695,6 +8508,11 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
       const list = section.querySelector('[data-content-list]');
       const kind = list?.dataset.contentList;
       if (kind) bindContentListHandlers(section, kind);
+    });
+
+    // Bind das sub-abas VIP (Por Campanha / Conteúdo Exclusivo)
+    modal.querySelectorAll('[data-vip-subtab]').forEach(b => {
+      b.onclick = handleVipSubTabClick;
     });
   }
   // ============== END CONTENT LIST ==============
@@ -8643,21 +9461,601 @@ async function saveImportedCampaigns() {
 }
 
 // ============================================================
-// EXPORT PDF — Calendário horizontal (mês ou Grupo VIP)
+// EXPORT PDF — Plano do Mês (por campanha, pra equipe imprimir)
+// Capa + 1 página por campanha com cronograma de conteúdos
+// Inclui só campanhas regulares (não VIP)
 // ============================================================
-async function handleExportCalendarPDF(vipOnly) {
+async function handleExportPlanoMesPDF() {
   const yd = getYearData(state.currentYear);
   const monthIdx = MONTHS_PT.indexOf(state.currentMonth);
   const yearN = state.currentYear;
 
-  // Pega todas as campanhas do mês — filtra por VIP ou regulares
-  const monthModels = yd.models
+  // Pega campanhas regulares
+  const monthCampaignsRegulares = yd.models
+    .filter(m => m.remessaId === state.currentRemessa
+              && m.month === state.currentMonth
+              && !m.isVipGroup)
+    .map(migrateModel);
+
+  // Pega Grupo VIP (será tratado como uma "campanha" no final)
+  const monthVipGroup = yd.models
+    .filter(m => m.remessaId === state.currentRemessa
+              && m.month === state.currentMonth
+              && m.isVipGroup)
+    .map(migrateModel)[0]; // só pode existir 1 VIP por mês
+
+  if (monthCampaignsRegulares.length === 0 && !monthVipGroup) {
+    showToast('Nenhuma campanha ou Grupo VIP cadastrado nesse mês');
+    return;
+  }
+
+  // Ordena campanhas regulares por data de início
+  monthCampaignsRegulares.sort((a, b) => {
+    if (!a.campaignStart && !b.campaignStart) return 0;
+    if (!a.campaignStart) return 1;
+    if (!b.campaignStart) return -1;
+    return a.campaignStart.localeCompare(b.campaignStart);
+  });
+
+  // Lista final: campanhas regulares primeiro, depois VIP (com flag _isVip)
+  const monthCampaigns = [...monthCampaignsRegulares];
+  if (monthVipGroup) {
+    monthCampaigns.push({ ...monthVipGroup, _isVipInPlan: true });
+  }
+
+  // Totais agregados (incluindo VIP)
+  let totalVideos = 0, totalReels = 0, totalPhotos = 0, totalPolls = 0;
+  let totalScheduled = 0, totalPosted = 0;
+  monthCampaigns.forEach(c => {
+    totalVideos += (c.videos || []).length;
+    totalReels  += (c.reels  || []).length;
+    totalPhotos += (c.photos || []).length;
+    totalPolls  += (c.polls  || []).length;
+    (c.videos || []).concat(c.reels || [], c.photos || [], c.polls || []).forEach(it => {
+      if (it.publishDate) totalScheduled++;
+      if (it.posted) totalPosted++;
+    });
+  });
+
+  // Helper: formata data ISO (YYYY-MM-DD) → DD/MM
+  const fmtBR = (iso) => {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}`;
+  };
+  const fmtDay = (iso) => {
+    if (!iso) return '—';
+    const [, , d] = iso.split('-');
+    return d;
+  };
+  const fmtWeekday = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()];
+  };
+  const periodDays = (start, end) => {
+    if (!start || !end) return 0;
+    const [y1, m1, d1] = start.split('-').map(Number);
+    const [y2, m2, d2] = end.split('-').map(Number);
+    const ms = new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1);
+    return Math.round(ms / (1000 * 60 * 60 * 24)) + 1;
+  };
+
+  // Renderiza UMA página por campanha (ou Grupo VIP)
+  const campaignPagesHTML = monthCampaigns.map((c, idx) => {
+    const isVipPage = !!c._isVipInPlan;
+    // VIP usa cor dourada fixa, campanhas regulares usam pickCampaignColor
+    const color = isVipPage ? '#c9a950' : pickCampaignColor(c.id);
+    const videos = c.videos || [];
+    const reels = c.reels || [];
+    const photos = c.photos || [];
+    const polls = c.polls || [];
+
+    // Monta itens — VIP tem fotos+enquetes, regulares só vídeos+reels
+    const allItems = isVipPage ? [
+      ...videos.map(v => ({ ...v, kind: 'video', icon: '🎥', kindLabel: 'Vídeo VIP' })),
+      ...photos.map(p => ({ ...p, kind: 'photo', icon: '📷', kindLabel: 'Foto VIP' })),
+      ...polls.map(p => ({ ...p, kind: 'poll', icon: '📊', kindLabel: 'Enquete' }))
+    ] : [
+      ...videos.map(v => ({ ...v, kind: 'video', icon: '🎥', kindLabel: 'Vídeo' })),
+      ...reels.map(r => ({ ...r, kind: 'reel', icon: '🎞', kindLabel: 'Reel' }))
+    ];
+
+    // Ordena por data (sem data fica no final)
+    allItems.sort((a, b) => {
+      if (!a.publishDate && !b.publishDate) return 0;
+      if (!a.publishDate) return 1;
+      if (!b.publishDate) return -1;
+      return a.publishDate.localeCompare(b.publishDate);
+    });
+
+    const scheduledCount = allItems.filter(i => i.publishDate).length;
+    const postedCount = allItems.filter(i => i.posted).length;
+
+    const cronograma = allItems.length > 0 ? `
+      <table class="plan-schedule">
+        <thead>
+          <tr>
+            <th class="col-day">Dia</th>
+            <th class="col-when">Data</th>
+            <th class="col-type">Tipo</th>
+            <th class="col-title">Título</th>
+            <th class="col-status">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allItems.map(it => {
+            const statusBadges = [];
+            if (it.recorded) statusBadges.push('<span class="badge-status badge-rec">G</span>');
+            if (it.edited) statusBadges.push('<span class="badge-status badge-edit">E</span>');
+            if (it.posted) statusBadges.push('<span class="badge-status badge-post">P</span>');
+            return `
+              <tr class="${it.posted ? 'row-posted' : ''} ${!it.publishDate ? 'row-no-date' : ''}">
+                <td class="col-day">${it.publishDate ? fmtWeekday(it.publishDate) : '—'}</td>
+                <td class="col-when">${fmtBR(it.publishDate)}</td>
+                <td class="col-type">${it.icon} ${it.kindLabel}</td>
+                <td class="col-title">${escapeHtml(it.name || '(sem nome)')}</td>
+                <td class="col-status">${statusBadges.join(' ') || '<span class="badge-status badge-none">○</span>'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    ` : `
+      <div class="plan-empty-camp">
+        Nenhum vídeo ou reel cadastrado ainda nesta campanha.
+      </div>
+    `;
+
+    return `
+      <div class="plan-page" style="page-break-before:${idx === 0 ? 'auto' : 'always'};">
+        <div class="plan-camp-header" style="border-left-color:${color};">
+          <div class="plan-camp-eyebrow">${isVipPage ? '💎 Grupo VIP · WhatsApp' : `Campanha ${idx + 1} de ${monthCampaigns.length}`}</div>
+          <h2 class="plan-camp-title" style="color:${color};">${isVipPage ? '💎 ' : ''}${escapeHtml(c.name || (isVipPage ? 'Grupo VIP' : 'Sem nome'))}</h2>
+          ${c.description ? `<p class="plan-camp-desc">${escapeHtml(c.description)}</p>` : ''}
+
+          <div class="plan-camp-meta">
+            <div class="plan-meta-block">
+              <div class="plan-meta-label">${isVipPage ? 'Período' : 'Período de campanha'}</div>
+              <div class="plan-meta-value">
+                ${isVipPage
+                  ? `Mês inteiro de ${state.currentMonth}/${yearN}`
+                  : (c.campaignStart && c.campaignEnd
+                      ? `${fmtBR(c.campaignStart)} → ${fmtBR(c.campaignEnd)}`
+                      : '<em style="color:#888;">não definido</em>')}
+                ${!isVipPage && c.campaignStart && c.campaignEnd ? `<span class="plan-meta-extra">${periodDays(c.campaignStart, c.campaignEnd)} dias</span>` : ''}
+              </div>
+            </div>
+
+            ${!isVipPage ? `
+              <div class="plan-meta-block">
+                <div class="plan-meta-label">Período de gravação</div>
+                <div class="plan-meta-value">
+                  ${c.shootStart && c.shootEnd
+                    ? `${fmtBR(c.shootStart)} → ${fmtBR(c.shootEnd)}`
+                    : '<em style="color:#888;">não definido</em>'}
+                </div>
+              </div>
+            ` : `
+              <div class="plan-meta-block">
+                <div class="plan-meta-label">Canal</div>
+                <div class="plan-meta-value">
+                  WhatsApp · grupo de clientes VIPs
+                </div>
+              </div>
+            `}
+
+            <div class="plan-meta-block">
+              <div class="plan-meta-label">Conteúdo previsto</div>
+              <div class="plan-meta-value">
+                ${isVipPage
+                  ? `${videos.length} vídeo${videos.length !== 1 ? 's' : ''} · ${photos.length} foto${photos.length !== 1 ? 's' : ''} · ${polls.length} enquete${polls.length !== 1 ? 's' : ''}`
+                  : `${videos.length} vídeo${videos.length !== 1 ? 's' : ''} · ${reels.length} reel${reels.length !== 1 ? 's' : ''}`}
+                <span class="plan-meta-extra">${scheduledCount} agendado${scheduledCount !== 1 ? 's' : ''} · ${postedCount} postado${postedCount !== 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="plan-section-title">${isVipPage ? 'Cronograma de posts no Grupo VIP' : 'Cronograma de conteúdos'}</h3>
+        ${cronograma}
+
+        <div class="plan-camp-footer">
+          <span class="plan-legend"><span class="badge-status badge-rec">${isVipPage ? 'C' : 'G'}</span> ${isVipPage ? 'Criado' : 'Gravado'}</span>
+          <span class="plan-legend"><span class="badge-status badge-edit">${isVipPage ? 'R' : 'E'}</span> ${isVipPage ? 'Revisado' : 'Editado'}</span>
+          <span class="plan-legend"><span class="badge-status badge-post">P</span> Postado</span>
+          <span class="plan-legend"><span class="badge-status badge-none">○</span> Pendente</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Capa
+  const coverHTML = `
+    <div class="plan-page plan-cover" style="page-break-after:always;">
+      <div class="plan-eyebrow">Plano do Mês · Loretto Scarpa</div>
+      <h1 class="plan-cover-title">${state.currentMonth}<span class="plan-cover-year">${yearN}</span></h1>
+      <p class="plan-cover-sub">Cronograma de campanhas pra impressão · ${new Date().toLocaleDateString('pt-BR')}</p>
+
+      <div class="plan-cover-totals">
+        <div class="plan-total-card">
+          <div class="plan-total-num">${monthCampaignsRegulares.length}${monthVipGroup ? ` <span style="font-size:0.5em;opacity:0.6;">+1 VIP</span>` : ''}</div>
+          <div class="plan-total-label">Campanha${monthCampaignsRegulares.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="plan-total-card">
+          <div class="plan-total-num">${totalVideos}</div>
+          <div class="plan-total-label">Vídeo${totalVideos !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="plan-total-card">
+          <div class="plan-total-num">${totalReels + totalPhotos + totalPolls}</div>
+          <div class="plan-total-label">Outros${monthVipGroup ? ' (reels+VIP)' : ' (reels)'}</div>
+        </div>
+        <div class="plan-total-card">
+          <div class="plan-total-num">${totalScheduled}</div>
+          <div class="plan-total-label">Agendado${totalScheduled !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="plan-total-card plan-total-posted">
+          <div class="plan-total-num">${totalPosted}</div>
+          <div class="plan-total-label">Postado${totalPosted !== 1 ? 's' : ''}</div>
+        </div>
+      </div>
+
+      <h3 class="plan-cover-section">Campanhas do mês</h3>
+      <div class="plan-cover-list">
+        ${monthCampaigns.map((c, i) => {
+          const isVipItem = !!c._isVipInPlan;
+          const color = isVipItem ? '#c9a950' : pickCampaignColor(c.id);
+          const videos = (c.videos || []).length;
+          const reels = (c.reels || []).length;
+          const photos = (c.photos || []).length;
+          const polls = (c.polls || []).length;
+          // Contagem de itens varia por tipo
+          const itemSummary = isVipItem
+            ? `${videos} vídeo${videos !== 1 ? 's' : ''} · ${photos} foto${photos !== 1 ? 's' : ''} · ${polls} enquete${polls !== 1 ? 's' : ''}`
+            : `${videos} vídeo${videos !== 1 ? 's' : ''} · ${reels} reel${reels !== 1 ? 's' : ''}`;
+          // Período: VIP é mês inteiro
+          const periodText = isVipItem
+            ? `Mês inteiro de ${state.currentMonth}`
+            : (c.campaignStart && c.campaignEnd ? `${fmtBR(c.campaignStart)} → ${fmtBR(c.campaignEnd)}` : 'sem datas');
+          return `
+            <div class="plan-cover-item" style="border-left-color:${color};${isVipItem ? 'background:rgba(201,169,80,0.08);' : ''}">
+              <div class="plan-cover-item-num" style="color:${color};">${isVipItem ? '💎' : String(i + 1).padStart(2, '0')}</div>
+              <div class="plan-cover-item-content">
+                <div class="plan-cover-item-name">${isVipItem ? '💎 ' : ''}${escapeHtml(c.name || (isVipItem ? 'Grupo VIP' : 'Sem nome'))}</div>
+                <div class="plan-cover-item-meta">
+                  ${periodText} · ${itemSummary}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <p class="plan-cover-foot">
+        Equipe — Larissa, Lorrayne · Use esse documento como referência ao longo do mês.
+        Ele reflete o estado do dashboard no momento da exportação. Pra dados mais novos, exporte de novo.
+      </p>
+    </div>
+  `;
+
+  // Janela de impressão
+  const win = window.open('', '_blank');
+  if (!win) {
+    showToast('Bloqueador de pop-up impediu a abertura. Permita pop-ups deste site.');
+    return;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Plano do Mês · ${state.currentMonth} ${yearN}</title>
+<style>
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #2a2520;
+    background: #fff;
+    line-height: 1.5;
+    font-size: 11pt;
+  }
+  .plan-page { width: 100%; padding-bottom: 8mm; }
+
+  /* Capa */
+  .plan-cover { padding-top: 4mm; }
+  .plan-eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #c9a950;
+    margin-bottom: 4mm;
+  }
+  .plan-cover-title {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 42pt;
+    font-weight: 400;
+    color: #2a2520;
+    line-height: 1;
+    margin-bottom: 2mm;
+  }
+  .plan-cover-year {
+    font-size: 22pt;
+    color: #c9a950;
+    margin-left: 8pt;
+    font-style: normal;
+  }
+  .plan-cover-sub {
+    color: #888;
+    font-size: 10pt;
+    margin-bottom: 8mm;
+  }
+  .plan-cover-totals {
+    display: flex;
+    gap: 4mm;
+    margin: 8mm 0 12mm;
+    flex-wrap: wrap;
+  }
+  .plan-total-card {
+    flex: 1;
+    min-width: 28mm;
+    padding: 5mm 4mm;
+    border: 1px solid #d4cfb8;
+    border-radius: 2pt;
+    text-align: center;
+  }
+  .plan-total-card.plan-total-posted {
+    background: #f0f5e3;
+    border-color: #8aa854;
+  }
+  .plan-total-num {
+    font-family: Georgia, serif;
+    font-size: 28pt;
+    font-weight: 400;
+    color: #2a2520;
+    line-height: 1;
+  }
+  .plan-total-posted .plan-total-num { color: #5a7a30; }
+  .plan-total-label {
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #888;
+    margin-top: 2mm;
+  }
+
+  .plan-cover-section {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 14pt;
+    color: #2a2520;
+    margin-bottom: 4mm;
+    padding-bottom: 2mm;
+    border-bottom: 1px solid #e0dac3;
+  }
+  .plan-cover-list { display: flex; flex-direction: column; gap: 3mm; margin-bottom: 8mm; }
+  .plan-cover-item {
+    display: flex;
+    gap: 4mm;
+    padding: 3mm 4mm;
+    border-left: 3pt solid #c9a950;
+    background: #faf8f0;
+    border-radius: 1pt;
+    align-items: center;
+  }
+  .plan-cover-item-num {
+    font-family: Georgia, serif;
+    font-size: 18pt;
+    font-weight: 400;
+    min-width: 12mm;
+  }
+  .plan-cover-item-name {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 13pt;
+    color: #2a2520;
+  }
+  .plan-cover-item-meta {
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    color: #888;
+    margin-top: 1mm;
+  }
+  .plan-cover-foot {
+    font-size: 9pt;
+    color: #999;
+    border-top: 1px solid #e0dac3;
+    padding-top: 4mm;
+    margin-top: 6mm;
+    line-height: 1.6;
+  }
+
+  /* Página de campanha */
+  .plan-camp-header {
+    border-left: 4pt solid #c9a950;
+    padding: 4mm 0 4mm 6mm;
+    margin-bottom: 6mm;
+  }
+  .plan-camp-eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #888;
+    margin-bottom: 2mm;
+  }
+  .plan-camp-title {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 26pt;
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 2mm;
+  }
+  .plan-camp-desc {
+    font-size: 10.5pt;
+    color: #555;
+    margin-bottom: 4mm;
+    font-style: italic;
+  }
+  .plan-camp-meta {
+    display: flex;
+    gap: 6mm;
+    flex-wrap: wrap;
+    margin-top: 4mm;
+  }
+  .plan-meta-block {
+    flex: 1;
+    min-width: 50mm;
+  }
+  .plan-meta-label {
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #aaa;
+    margin-bottom: 1mm;
+  }
+  .plan-meta-value {
+    font-family: Georgia, serif;
+    font-size: 11pt;
+    color: #2a2520;
+  }
+  .plan-meta-extra {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    color: #888;
+    margin-top: 1mm;
+  }
+
+  .plan-section-title {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-size: 14pt;
+    color: #2a2520;
+    margin-bottom: 3mm;
+    padding-bottom: 2mm;
+    border-bottom: 1px solid #e0dac3;
+  }
+
+  /* Tabela de cronograma */
+  .plan-schedule {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+  }
+  .plan-schedule th {
+    text-align: left;
+    padding: 3mm 2mm;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #888;
+    border-bottom: 2px solid #c9a950;
+  }
+  .plan-schedule td {
+    padding: 3mm 2mm;
+    border-bottom: 1px solid #e8e3cd;
+    vertical-align: top;
+  }
+  .plan-schedule .col-day { width: 14mm; font-family: 'Courier New', monospace; font-size: 9pt; color: #888; }
+  .plan-schedule .col-when { width: 18mm; font-family: 'Courier New', monospace; font-size: 9.5pt; }
+  .plan-schedule .col-type { width: 26mm; font-size: 10pt; }
+  .plan-schedule .col-title { font-family: Georgia, serif; font-size: 11pt; }
+  .plan-schedule .col-status { width: 28mm; text-align: right; }
+
+  .plan-schedule tr.row-posted { background: #f5f8e8; }
+  .plan-schedule tr.row-posted .col-title { color: #5a7a30; }
+  .plan-schedule tr.row-no-date { background: #fdf6f0; }
+  .plan-schedule tr.row-no-date .col-title { color: #b85; font-style: italic; }
+
+  .badge-status {
+    display: inline-block;
+    width: 5mm;
+    height: 5mm;
+    line-height: 5mm;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    font-weight: 700;
+    border-radius: 50%;
+    margin-left: 1mm;
+  }
+  .badge-rec { background: #e8e3cd; color: #5a4a30; }
+  .badge-edit { background: #d4cfb8; color: #5a4a30; }
+  .badge-post { background: #8aa854; color: #fff; }
+  .badge-none { background: transparent; color: #ccc; border: 1px dashed #ccc; }
+
+  .plan-empty-camp {
+    padding: 8mm;
+    text-align: center;
+    color: #aaa;
+    font-style: italic;
+    font-size: 10pt;
+    border: 1px dashed #d4cfb8;
+    border-radius: 2pt;
+  }
+
+  .plan-camp-footer {
+    margin-top: 6mm;
+    padding-top: 3mm;
+    border-top: 1px solid #e0dac3;
+    display: flex;
+    gap: 8mm;
+    flex-wrap: wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    color: #888;
+  }
+  .plan-legend { display: inline-flex; align-items: center; gap: 2mm; }
+
+  @media print {
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  ${coverHTML}
+  ${campaignPagesHTML}
+  <scr` + `ipt>setTimeout(() => window.print(), 600);</scr` + `ipt>
+</body>
+</html>`;
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+// ============================================================
+// EXPORT PDF — Calendário horizontal
+// scope: 'all' | 'campanhas' | 'vip'
+// ============================================================
+async function handleExportCalendarPDF(scope) {
+  // Compat retro: caller antigo passava boolean (vipOnly)
+  if (scope === true) scope = 'vip';
+  if (scope === false) scope = 'campanhas';
+  if (!scope) scope = 'all';
+
+  const yd = getYearData(state.currentYear);
+  const monthIdx = MONTHS_PT.indexOf(state.currentMonth);
+  const yearN = state.currentYear;
+
+  // Pega todas as campanhas do mês — filtra por scope
+  let monthModels = yd.models
     .filter(m => m.remessaId === state.currentRemessa && m.month === state.currentMonth)
-    .map(migrateModel)
-    .filter(m => vipOnly ? m.isVipGroup : !m.isVipGroup);
+    .map(migrateModel);
+  if (scope === 'campanhas') monthModels = monthModels.filter(m => !m.isVipGroup);
+  else if (scope === 'vip') monthModels = monthModels.filter(m => !!m.isVipGroup);
 
   if (monthModels.length === 0) {
-    showToast(vipOnly ? 'Nenhum Grupo VIP cadastrado pra exportar' : 'Nenhuma campanha pra exportar');
+    const msg = scope === 'vip' ? 'Nenhum Grupo VIP cadastrado pra exportar'
+              : scope === 'campanhas' ? 'Nenhuma campanha regular pra exportar'
+              : 'Nenhuma campanha cadastrada pra exportar';
+    showToast(msg);
     return;
   }
 
@@ -8691,8 +10089,9 @@ async function handleExportCalendarPDF(vipOnly) {
   // Coleta períodos das campanhas (faixa colorida no calendário)
   // Só pra campanhas regulares (VIP é o mês inteiro)
   const campaignPeriods = [];
-  if (!vipOnly) {
+  if (scope !== 'vip') {
     monthModels.forEach(m => {
+      if (m.isVipGroup) return; // VIP nunca tem período
       if (!m.campaignStart || !m.campaignEnd) return;
       const [yS, mS, dS] = m.campaignStart.split('-').map(Number);
       const [yE, mE, dE] = m.campaignEnd.split('-').map(Number);
@@ -8703,21 +10102,22 @@ async function handleExportCalendarPDF(vipOnly) {
         name: m.name || 'Sem nome',
         startDay: dS,
         endDay: dE,
-        color: pickCampaignColor(m.id) // cor estável por id
+        color: pickCampaignColor(m.id)
       });
     });
   }
 
   // Avisa se não tem itens agendados
   if (allItems.length === 0) {
+    const tipos = scope === 'vip' ? 'vídeos/fotos/enquetes' : scope === 'campanhas' ? 'vídeos/reels' : 'conteúdos';
     const ok = confirm(
       `Nenhum item tem data de publicação cadastrada ainda em ${state.currentMonth}/${yearN}.\n\n` +
-      `O calendário ficaria em branco (mas com os períodos das campanhas marcados).\n\n` +
+      `O calendário ficaria em branco${scope !== 'vip' ? ' (mas com os períodos das campanhas marcados)' : ''}.\n\n` +
       `Quer exportar mesmo assim?\n\n` +
       `Pra ter um calendário com itens:\n` +
-      `1. Abra cada campanha\n` +
+      `1. Abra cada campanha${scope === 'vip' ? ' do Grupo VIP' : ''}\n` +
       `2. Vá na aba "Conteúdos"\n` +
-      `3. Adicione vídeos/reels${vipOnly ? '/fotos/enquetes' : ''} com data de publicação\n` +
+      `3. Adicione ${tipos} com data de publicação\n` +
       `4. Volte aqui e exporte o PDF`
     );
     if (!ok) return;
@@ -8812,7 +10212,9 @@ async function handleExportCalendarPDF(vipOnly) {
     `;
   }).join('');
 
-  const title = vipOnly ? 'Calendário Grupo VIP' : 'Calendário do Mês';
+  const title = scope === 'vip' ? 'Calendário Grupo VIP'
+              : scope === 'campanhas' ? 'Calendário Campanhas'
+              : 'Calendário Geral';
   const subtitle = `${state.currentMonth} ${yearN}`;
 
   const html = `<!DOCTYPE html>
@@ -9038,7 +10440,7 @@ async function handleExportCalendarPDF(vipOnly) {
 <div class="pdf-header">
   <div class="pdf-brand"><em>Loretto</em> Scarpa</div>
   <div class="pdf-title-block">
-    <div class="pdf-eyebrow">${vipOnly ? 'Exclusivo · Grupo VIP' : 'Calendário de Conteúdos'}</div>
+    <div class="pdf-eyebrow">${scope === 'vip' ? 'Exclusivo · Grupo VIP' : scope === 'campanhas' ? 'Calendário · Instagram' : 'Calendário Geral · Tudo'}</div>
     <div class="pdf-title">${title} · ${subtitle}</div>
   </div>
 </div>
@@ -9058,7 +10460,7 @@ async function handleExportCalendarPDF(vipOnly) {
     <div class="pdf-cal-grid">${cells.join('')}</div>
   </div>
   <div class="pdf-sidebar">
-    <h3>${vipOnly ? '💎 Grupo VIP' : 'Campanhas do mês'}</h3>
+    <h3>${scope === 'vip' ? '💎 Grupo VIP' : scope === 'campanhas' ? '🎯 Campanhas' : 'Tudo do mês'}</h3>
     ${campaignsListHTML}
   </div>
 </div>
@@ -11145,29 +12547,59 @@ document.addEventListener('keydown', (e) => {
   // Login form bindings
   const loginEmailEl = document.getElementById('loginEmail');
   const loginPasswordEl = document.getElementById('loginPassword');
+  const loginPassword3El = document.getElementById('loginPassword3');
   const loginSubmitEl = document.getElementById('loginSubmit');
+  const loginSubmit3El = document.getElementById('loginSubmit3');
   const loginModeToggleEl = document.getElementById('loginModeToggle');
 
+  // Step 1 → Step 2: clica num card de perfil
+  document.querySelectorAll('.login-profile-card').forEach(card => {
+    card.onclick = () => {
+      const email = card.dataset.profileEmail;
+      const name = card.dataset.profileName;
+      selectLoginProfile(email, name);
+    };
+  });
+
+  // Step 1 → Step 3: "Outro email"
+  const loginOtherBtn = document.getElementById('loginOtherBtn');
+  if (loginOtherBtn) loginOtherBtn.onclick = () => goToLoginStep(3);
+
+  // Step 2/3 → Step 1: voltar
+  const loginBackBtn = document.getElementById('loginBackBtn');
+  if (loginBackBtn) loginBackBtn.onclick = () => goToLoginStep(1);
+  const loginBackBtn3 = document.getElementById('loginBackBtn3');
+  if (loginBackBtn3) loginBackBtn3.onclick = () => goToLoginStep(1);
+
+  // Submit step 2 (senha do perfil)
   if (loginSubmitEl) loginSubmitEl.onclick = handleLogin;
   if (loginPasswordEl) loginPasswordEl.onkeydown = (e) => {
     if (e.key === 'Enter') handleLogin();
   };
+
+  // Submit step 3 (outro email)
+  if (loginSubmit3El) loginSubmit3El.onclick = handleLoginOther;
+  if (loginPassword3El) loginPassword3El.onkeydown = (e) => {
+    if (e.key === 'Enter') handleLoginOther();
+  };
   if (loginEmailEl) loginEmailEl.onkeydown = (e) => {
     if (e.key === 'Enter') {
-      if (loginPasswordEl.value) handleLogin();
-      else loginPasswordEl.focus();
+      if (loginPassword3El && loginPassword3El.value) handleLoginOther();
+      else loginPassword3El?.focus();
     }
   };
 
   if (loginModeToggleEl) {
     loginModeToggleEl.onclick = async () => {
-      const email = loginEmailEl.value.trim().toLowerCase();
+      // Usa email do perfil selecionado (step 2) ou do form (step 3)
+      const email = (_selectedProfileEmail || loginEmailEl?.value || '').trim().toLowerCase();
+      const errEl = document.getElementById('loginError') || document.getElementById('loginError3');
       if (!email) {
-        document.getElementById('loginError').textContent = 'Digite seu email primeiro';
+        if (errEl) errEl.textContent = 'Selecione um perfil primeiro';
         return;
       }
       if (!AUTHORIZED_USERS[email]) {
-        document.getElementById('loginError').textContent = 'Email não autorizado';
+        if (errEl) errEl.textContent = 'Email não autorizado';
         return;
       }
       try {
@@ -11175,7 +12607,7 @@ document.addEventListener('keydown', (e) => {
         showToast('Email de recuperação enviado — confira sua caixa de entrada');
       } catch (err) {
         console.error(err);
-        document.getElementById('loginError').textContent = 'Erro ao enviar email de recuperação';
+        if (errEl) errEl.textContent = 'Erro ao enviar email de recuperação';
       }
     };
   }
