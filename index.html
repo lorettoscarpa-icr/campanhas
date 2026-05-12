@@ -455,9 +455,11 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
       radial-gradient(ellipse at bottom, var(--welcome-radial-2) 0%, transparent 55%);
     z-index: 250;
     display: none;
-    align-items: center;
-    justify-content: center;
+    align-items: safe center;
+    justify-content: safe center;
     padding: 40px 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .login-screen.show {
@@ -726,6 +728,168 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     .login-profile-name { font-size: 15px; }
   }
   /* ============== END LOGIN PROFILE PICKER ============== */
+
+  /* ============== LOGIN STEP 1 — DESIGN GRANDE (editorial) ============== */
+  .login-screen.show .login-step1-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .login-step1-wrap {
+    width: 100%;
+    max-width: 1100px;
+    text-align: center;
+    padding: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+  .login-step1-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.42em;
+    color: var(--gold);
+    margin-bottom: 14px;
+    opacity: 0.88;
+  }
+  .login-step1-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(34px, 4.6vw, 58px);
+    font-weight: 400;
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin: 0 0 14px;
+  }
+  .login-step1-title em {
+    font-style: italic;
+    color: var(--gold);
+    font-weight: 400;
+  }
+  .login-step1-sub {
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    color: var(--text-2);
+    margin: 0 auto 42px;
+    letter-spacing: 0.02em;
+    max-width: 520px;
+  }
+  .login-profiles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+    margin-bottom: 22px;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .login-profile-card-big {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 40px 32px 34px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                border-color 0.3s,
+                box-shadow 0.4s;
+    position: relative;
+    overflow: hidden;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .login-profile-card-big::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top, var(--gold-glow), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.45s;
+    pointer-events: none;
+  }
+  .login-profile-card-big:hover {
+    border-color: var(--gold-soft);
+    transform: translateY(-3px);
+    box-shadow: 0 26px 60px -22px rgba(0,0,0,0.5);
+  }
+  .login-profile-card-big:hover::before { opacity: 1; }
+  .login-profile-card-big:active { transform: translateY(-1px); }
+  .login-profile-avatar-big {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--surface);
+    border: 1px solid var(--gold-soft);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.38);
+    margin-bottom: 26px;
+    transition: transform 0.45s ease, box-shadow 0.4s;
+    position: relative;
+    z-index: 1;
+  }
+  .login-profile-card-big:hover .login-profile-avatar-big {
+    transform: scale(1.025);
+    box-shadow: 0 16px 44px rgba(0,0,0,0.45);
+  }
+  .login-profile-name-big {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 25px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+    position: relative;
+    z-index: 1;
+  }
+  .login-profile-role-big {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.36em;
+    color: var(--text-2);
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .login-profile-enter {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: var(--gold);
+    padding: 11px 32px;
+    border: 1px solid var(--gold-soft);
+    border-radius: 2px;
+    transition: background 0.3s, color 0.3s, border-color 0.3s, letter-spacing 0.3s;
+    position: relative;
+    z-index: 1;
+  }
+  .login-profile-card-big:hover .login-profile-enter {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    letter-spacing: 0.38em;
+  }
+  .login-step1-other {
+    margin-top: 6px;
+  }
+  @media (max-width: 880px) {
+    .login-profiles-grid {
+      grid-template-columns: 1fr;
+      max-width: 400px;
+    }
+    .login-profile-card-big { padding: 36px 24px 30px; }
+    .login-profile-avatar-big { width: 160px; height: 160px; margin-bottom: 22px; }
+    .login-profile-name-big { font-size: 23px; }
+    .login-step1-sub { margin-bottom: 32px; }
+  }
+  /* ============== END LOGIN STEP 1 GRANDE ============== */
 
   .login-mode-toggle:hover {
     color: var(--gold);
@@ -5337,33 +5501,39 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 
 <!-- Firebase Login Screen (shown when not authenticated) -->
 <div class="login-screen" id="loginScreen">
-  <div class="login-card">
+
+  <!-- STEP 1: layout largo, fora do card pequeno -->
+  <div class="login-step1-wrap" id="loginStep1">
+    <div class="login-step1-eyebrow">Bem-vindas</div>
+    <h1 class="login-step1-title">Quem está <em>entrando?</em></h1>
+    <p class="login-step1-sub">Selecione seu perfil para acessar o dashboard de campanhas</p>
+
+    <div class="login-profiles-grid">
+      <button class="login-profile-card-big" data-profile-email="larissalorettoscarpa@gmail.com" data-profile-name="Larissa" type="button">
+        <div class="login-profile-avatar-big" id="loginAvatarLarissa"></div>
+        <div class="login-profile-name-big">Larissa</div>
+        <div class="login-profile-role-big">Coleções</div>
+        <span class="login-profile-enter">Entrar →</span>
+      </button>
+      <button class="login-profile-card-big" data-profile-email="lorraynelorettoscarpa@gmail.com" data-profile-name="Lorrayne" type="button">
+        <div class="login-profile-avatar-big" id="loginAvatarLorrayne"></div>
+        <div class="login-profile-name-big">Lorrayne</div>
+        <div class="login-profile-role-big">Marketing</div>
+        <span class="login-profile-enter">Entrar →</span>
+      </button>
+    </div>
+
+    <button class="login-other-btn login-step1-other" id="loginOtherBtn" type="button">Outro email →</button>
+  </div>
+
+  <!-- STEPS 2 E 3: card pequeno (senha) -->
+  <div class="login-card" id="loginCard23" style="display: none;">
     <div class="login-brand">
       <div class="brand-mark">L</div>
       <div class="brand-text" style="text-align: left;">
         <div class="brand-name"><em>Loretto</em> Scarpa</div>
         <div class="brand-tag">Central de Campanhas</div>
       </div>
-    </div>
-
-    <!-- ETAPA 1: Seletor de perfil (DEFAULT) -->
-    <div id="loginStep1">
-      <div class="login-eyebrow">Acesso Restrito</div>
-      <h1 class="login-title">Quem está <em>entrando?</em></h1>
-      <p class="login-sub">Escolha seu perfil pra continuar.</p>
-
-      <div class="login-profiles">
-        <button class="login-profile-card" data-profile-email="larissalorettoscarpa@gmail.com" data-profile-name="Larissa">
-          <div class="login-profile-avatar" id="loginAvatarLarissa"></div>
-          <div class="login-profile-name">Larissa</div>
-        </button>
-        <button class="login-profile-card" data-profile-email="lorraynelorettoscarpa@gmail.com" data-profile-name="Lorrayne">
-          <div class="login-profile-avatar" id="loginAvatarLorrayne"></div>
-          <div class="login-profile-name">Lorrayne</div>
-        </button>
-      </div>
-
-      <button class="login-other-btn" id="loginOtherBtn">Outro email →</button>
     </div>
 
     <!-- ETAPA 2: Senha pro perfil escolhido -->
@@ -5406,6 +5576,7 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 
     <div class="login-foot">Loretto Scarpa · Sistema Interno</div>
   </div>
+
 </div>
 
 <!-- Welcome Screen (profile picker - shown after login) -->
@@ -5957,15 +6128,7 @@ async function loadUserPhoto(userId) {
     return state.userPhotos[userId];
   }
 
-  if (useFirebase()) {
-    try {
-      const ref = firebaseStorage.ref(`${STORAGE_BUCKET_USERS}/${userId}.jpg`);
-      const url = await ref.getDownloadURL();
-      state.userPhotos[userId] = url;
-      return url;
-    } catch (err) { /* fall through */ }
-  }
-
+  // 1) Cache local (foto customizada que o próprio usuário subiu nesse device)
   try {
     if (hasStorage) {
       const result = await window.storage.get(USER_PHOTO_PREFIX + userId, true);
@@ -5980,12 +6143,28 @@ async function loadUserPhoto(userId) {
         return local;
       }
     }
-  } catch (err) { /* not found */ }
+  } catch (err) { /* not found locally */ }
 
-  // Fall back to default embedded avatar
-  const fallback = DEFAULT_USER_PHOTOS[userId] || null;
-  state.userPhotos[userId] = fallback;
-  return fallback;
+  // 2) Default embedded base64 (Larissa, Lorrayne) — evita request no Storage e o erro CORS
+  if (DEFAULT_USER_PHOTOS[userId]) {
+    state.userPhotos[userId] = DEFAULT_USER_PHOTOS[userId];
+    return DEFAULT_USER_PHOTOS[userId];
+  }
+
+  // 3) Firebase Storage (último recurso, só pra users sem DEFAULT — ex: admin)
+  // Obs: pode falhar com CORS se o bucket não tiver CORS configurado;
+  // try/catch silencioso garante que isso não trava nada.
+  if (useFirebase()) {
+    try {
+      const ref = firebaseStorage.ref(`${STORAGE_BUCKET_USERS}/${userId}.jpg`);
+      const url = await ref.getDownloadURL();
+      state.userPhotos[userId] = url;
+      return url;
+    } catch (err) { /* fall through */ }
+  }
+
+  state.userPhotos[userId] = null;
+  return null;
 }
 
 async function saveUserPhoto(userId, base64) {
@@ -6145,9 +6324,12 @@ function goToLoginStep(step) {
   const s1 = document.getElementById('loginStep1');
   const s2 = document.getElementById('loginStep2');
   const s3 = document.getElementById('loginStep3');
+  const card23 = document.getElementById('loginCard23');
   if (s1) s1.style.display = step === 1 ? '' : 'none';
   if (s2) s2.style.display = step === 2 ? '' : 'none';
   if (s3) s3.style.display = step === 3 ? '' : 'none';
+  // Card pequeno só aparece nos steps 2 e 3
+  if (card23) card23.style.display = step === 1 ? 'none' : '';
 
   // Foca no campo apropriado
   setTimeout(() => {
@@ -10021,13 +10203,14 @@ async function handleExportPlanoMesPDF() {
 <body>
   ${coverHTML}
   ${campaignPagesHTML}
-  <scr` + `ipt>setTimeout(() => window.print(), 600);</scr` + `ipt>
+  <!-- Sem auto-print: equipe confere o conteúdo antes e clica em "Imprimir / PDF" no rodapé -->
 </body>
 </html>`;
 
   win.document.open();
   win.document.write(html);
   win.document.close();
+  showToast('Janela aberta — confira o conteúdo e clique em "Imprimir / PDF" quando estiver pronto');
 }
 
 // ============================================================
@@ -10470,12 +10653,7 @@ async function handleExportCalendarPDF(scope) {
   Loretto Scarpa · Central de Campanhas
 </div>
 
-` + '<scr' + 'ipt>' + `
-  // Auto-abre o diálogo de impressão após carregar (com pequeno delay pra fontes)
-  window.addEventListener('load', () => {
-    setTimeout(() => window.print(), 600);
-  });
-` + '<\/scr' + 'ipt>' + `
+<!-- Sem auto-print: confere o conteúdo antes e clica em "Imprimir / PDF" no rodapé -->
 </body>
 </html>`;
 
@@ -10490,7 +10668,7 @@ async function handleExportCalendarPDF(scope) {
   }
   // Limpa o objeto URL depois de um tempo (após o load da janela)
   setTimeout(() => URL.revokeObjectURL(url), 60000);
-  showToast('PDF gerado — confirme a impressão na nova aba');
+  showToast('Janela aberta — confira o conteúdo e clique em "Imprimir / PDF" quando estiver pronto');
 }
 
 // ============================================================
@@ -12552,8 +12730,8 @@ document.addEventListener('keydown', (e) => {
   const loginSubmit3El = document.getElementById('loginSubmit3');
   const loginModeToggleEl = document.getElementById('loginModeToggle');
 
-  // Step 1 → Step 2: clica num card de perfil
-  document.querySelectorAll('.login-profile-card').forEach(card => {
+  // Step 1 → Step 2: clica num card de perfil (suporta classe antiga e a nova "big")
+  document.querySelectorAll('.login-profile-card, .login-profile-card-big').forEach(card => {
     card.onclick = () => {
       const email = card.dataset.profileEmail;
       const name = card.dataset.profileName;
