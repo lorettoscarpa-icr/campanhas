@@ -3611,7 +3611,7 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     display: none;
     align-items: flex-start;
     justify-content: center;
-    padding: 60px 20px;
+    padding: 28px 16px;
     overflow-y: auto;
   }
 
@@ -3628,9 +3628,22 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     border: 1px solid var(--border-strong);
     width: 100%;
     max-width: 520px;
+    max-height: calc(100vh - 56px);
+    max-height: calc(100dvh - 56px);
+    display: flex;
+    flex-direction: column;
     box-shadow: var(--shadow-lg);
     animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: max-width 0.25s ease;
   }
+
+  /* Calendário precisa de mais espaço horizontal */
+  .modal.modal-wide { max-width: 820px; }
+  @media (max-width: 860px) { .modal.modal-wide { max-width: 520px; } }
+
+  .modal-header { flex: 0 0 auto; }
+  .modal-tabs { flex: 0 0 auto; }
+  .modal-footer { flex: 0 0 auto; }
 
   .modal-header {
     padding: 24px 28px;
@@ -3671,7 +3684,77 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     display: flex;
     flex-direction: column;
     gap: 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+    min-height: 0;
   }
+
+  /* ============== RESUMO DE CONTEÚDO (aba Detalhes) ============== */
+  .auto-calc-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--bg);
+    background: var(--gold);
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .content-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 4px 0 8px;
+  }
+  .content-summary-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .content-summary-item .cs-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .content-summary-item .cs-lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-2);
+  }
+  .content-summary-item .cs-lbl em {
+    font-style: normal;
+    color: var(--text-3);
+    display: block;
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  /* Botão "Calendário do mês" */
+  .add-btn-cal {
+    background: var(--surface) !important;
+    border: 1px solid var(--gold-soft) !important;
+    color: var(--gold) !important;
+  }
+  .add-btn-cal:hover {
+    background: var(--surface-2) !important;
+    border-color: var(--gold) !important;
+  }
+
+  /* Calendário: rola na horizontal em telas estreitas em vez de espremer os dias */
+  .campaign-calendar { overflow-x: auto; }
+  .cal-header, .cal-grid { min-width: 480px; }
 
   /* ============== IMPORT FROM BOARD MODAL ============== */
   .import-board-body { gap: 16px; }
@@ -5785,7 +5868,7 @@ const CAMPAIGN_TUTORIAL = [
   {
     target: 'data-step:add-model',
     title: 'Adicionar <em>campanha</em>',
-    text: 'Dentro de cada mês você adiciona quantas campanhas quiser. Clica em <strong>+ Adicionar Campanha</strong>, dá um nome (ex: Noivas, Pecuária), define <strong>período da campanha</strong>, <strong>período de gravação</strong> e <strong>quantas fotos e vídeos</strong> vai produzir.',
+    text: 'Dentro de cada mês você adiciona quantas campanhas quiser. Clica em <strong>+ Adicionar Campanha</strong>, dá um nome (ex: Noivas, Pecuária), define <strong>período da campanha</strong>, <strong>período de gravação</strong> e os conteúdos: <strong>Stories</strong>, <strong>Reels</strong> e <strong>Carrossel</strong> (as contagens de fotos e vídeos somam sozinhas).',
     arrow: null,
     placement: 'navigate-remessa'
   },
@@ -5988,27 +6071,29 @@ async function saveAllToFirestore() {
 async function savePhoto(photoId, base64) {
   state.photoCache.set(photoId, base64);
 
-  if (useFirebase()) {
-    return await savePhotoToFirebase(photoId, base64);
-  }
-
-  // localStorage fallback
+  // 1) Backup LOCAL sempre — rápido e confiável. Garante que a foto aparece
+  //    imediatamente, mesmo se o Firebase Storage estiver bloqueado/indisponível.
+  let localOk = false;
   try {
     if (hasStorage) {
       await window.storage.set(PHOTO_PREFIX + photoId, base64, true);
     } else {
       localStorage.setItem(PHOTO_PREFIX + photoId, base64);
     }
-    return true;
+    localOk = true;
   } catch (err) {
     if (err.name === 'QuotaExceededError' || /quota/i.test(err.message || '')) {
-      state.photoCache.delete(photoId);
-      showToast('⚠ Sem espaço — apague modelos antigos para liberar memória');
-      return false;
+      showToast('⚠ Sem espaço no aparelho — apague campanhas antigas pra liberar memória');
     }
-    showToast('Erro ao salvar foto');
-    return false;
   }
+
+  // 2) Sobe pro Firebase em SEGUNDO PLANO (sem travar a tela). Se falhar,
+  //    a foto continua salva localmente e no cache da sessão.
+  if (useFirebase()) {
+    savePhotoToFirebase(photoId, base64).catch(() => {});
+  }
+
+  return true; // a interface segue na hora (foto já está no cache + local)
 }
 
 async function savePhotoToFirebase(photoId, base64) {
@@ -6019,12 +6104,16 @@ async function savePhotoToFirebase(photoId, base64) {
     const blob = await response.blob();
 
     const ref = firebaseStorage.ref(`${STORAGE_BUCKET_MODELS}/${photoId}.jpg`);
-    await ref.put(blob, { contentType: 'image/jpeg' });
+    // Timeout de 20s: se o Storage não responder, não fica preso pra sempre.
+    await Promise.race([
+      ref.put(blob, { contentType: 'image/jpeg' }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
+    ]);
     setSyncStatus('', 'Sincronizado');
     return true;
   } catch (err) {
     console.error('Firebase photo upload failed:', err);
-    setSyncStatus('offline', 'Foto salva offline');
+    setSyncStatus('offline', 'Foto salva no aparelho');
     return false;
   }
 }
@@ -6493,51 +6582,52 @@ function migrateModel(m) {
   if (typeof m.description !== 'string') m.description = '';
   // Moodboard: array de photoIds (cada um aponta pra storage do Firebase ou localStorage)
   if (!Array.isArray(m.moodboard)) m.moodboard = [];
-  // Vídeos e Reels (campanhas regulares): cada item tem { id, name, recorded, edited, posted }
-  if (!Array.isArray(m.videos)) m.videos = [];
-  if (!Array.isArray(m.reels)) m.reels = [];
-  // Fotos e Enquetes (Grupo VIP usa em vez de Reels)
-  if (!Array.isArray(m.photos)) m.photos = [];
-  if (!Array.isArray(m.polls)) m.polls = [];
   // isVipGroup: true se essa "campanha" representa o Grupo VIP do mês
   if (typeof m.isVipGroup !== 'boolean') m.isVipGroup = false;
+
+  // ---- CONTEÚDOS ----
+  // Grupo VIP usa:        videos / photos / polls (vinculados por campanha)
+  // Campanhas regulares:  stories / reels / carrossel
+  //   🎞 Reels      = contam como 🎥 vídeos na aba principal
+  //   🖼 Carrossel  = contam como 📷 fotos na aba principal
+  //   📱 Stories    = acompanhadas, mas não entram nos totais de foto/vídeo
+
+  // Migração: o antigo "Vídeos" das campanhas regulares virou "Stories"
+  if (!m.isVipGroup && !Array.isArray(m.stories) && Array.isArray(m.videos)) {
+    m.stories = m.videos;
+    m.videos = [];
+  }
+
+  if (!Array.isArray(m.videos))    m.videos = [];    // só VIP usa
+  if (!Array.isArray(m.reels))     m.reels = [];     // regular (= vídeos)
+  if (!Array.isArray(m.stories))   m.stories = [];   // regular
+  if (!Array.isArray(m.carrossel)) m.carrossel = []; // regular (= fotos)
+  if (!Array.isArray(m.photos))    m.photos = [];    // só VIP
+  if (!Array.isArray(m.polls))     m.polls = [];     // só VIP
+
   // Sanitiza estrutura dos itens (caso venham incompletos)
-  m.videos = m.videos.map(v => ({
-    id: v.id || ('v_' + Math.random().toString(36).slice(2, 8)),
-    name: v.name || '',
-    recorded: !!v.recorded,
-    edited: !!v.edited,
-    posted: !!v.posted,
-    publishDate: v.publishDate || '',
-    linkedCampaignId: v.linkedCampaignId || null
-  }));
-  m.reels = m.reels.map(r => ({
-    id: r.id || ('r_' + Math.random().toString(36).slice(2, 8)),
-    name: r.name || '',
-    recorded: !!r.recorded,
-    edited: !!r.edited,
-    posted: !!r.posted,
-    publishDate: r.publishDate || '',
-    linkedCampaignId: r.linkedCampaignId || null
-  }));
-  m.photos = m.photos.map(p => ({
-    id: p.id || ('p_' + Math.random().toString(36).slice(2, 8)),
-    name: p.name || '',
-    recorded: !!p.recorded,
-    edited: !!p.edited,
-    posted: !!p.posted,
-    publishDate: p.publishDate || '',
-    linkedCampaignId: p.linkedCampaignId || null
-  }));
-  m.polls = m.polls.map(p => ({
-    id: p.id || ('q_' + Math.random().toString(36).slice(2, 8)),
-    name: p.name || '',
-    recorded: !!p.recorded,  // criada
-    edited: !!p.edited,      // revisada
-    posted: !!p.posted,      // postada
-    publishDate: p.publishDate || '',
-    linkedCampaignId: p.linkedCampaignId || null
-  }));
+  const _sanitizeItem = (prefix) => (it) => ({
+    id: it.id || (prefix + '_' + Math.random().toString(36).slice(2, 8)),
+    name: it.name || '',
+    recorded: !!it.recorded,
+    edited: !!it.edited,
+    posted: !!it.posted,
+    publishDate: it.publishDate || '',
+    linkedCampaignId: it.linkedCampaignId || null
+  });
+  m.videos    = m.videos.map(_sanitizeItem('v'));
+  m.reels     = m.reels.map(_sanitizeItem('r'));
+  m.stories   = m.stories.map(_sanitizeItem('s'));
+  m.carrossel = m.carrossel.map(_sanitizeItem('c'));
+  m.photos    = m.photos.map(_sanitizeItem('p'));
+  m.polls     = m.polls.map(_sanitizeItem('q'));
+
+  // Contagens auto-calculadas (campanhas regulares). Não zera dados antigos:
+  // só sobrescreve quando já existe conteúdo na lista correspondente.
+  if (!m.isVipGroup) {
+    if (m.reels.length > 0)     m.videosCount = m.reels.length;
+    if (m.carrossel.length > 0) m.photosCount = m.carrossel.length;
+  }
   // Categoria sempre 'Campanhas' (única) — estrutura legada
   if (!m.category) m.category = 'Campanhas';
   // Status: migra se vier do esquema antigo
@@ -7453,10 +7543,11 @@ function renderCategories() {
           <div class="category-name">
             <h3><em>Campanhas do mês</em> <span class="category-month-tag">${state.currentMonth}</span></h3>
             <span class="category-count">
-              ${models.length} ${models.length === 1 ? 'campanha' : 'campanhas'}${catPhotos > 0 ? ` · 📷 ${catPhotos}` : ''}${catVideos > 0 ? ` · 🎥 ${catVideos}` : ''}
+              ${models.length} ${models.length === 1 ? 'campanha' : 'campanhas'}${catPhotos > 0 ? ` · 🖼 ${catPhotos}` : ''}${catVideos > 0 ? ` · 🎞 ${catVideos}` : ''}
             </span>
           </div>
           <div class="category-actions">
+            <button class="add-btn add-btn-cal" data-open-calendar="1" type="button">📅 Calendário do mês</button>
             <button class="add-btn ${!canCreate ? 'disabled' : ''}" data-add="${cat}" ${!canCreate ? 'disabled' : ''}>+ Adicionar Campanha</button>
             ${vipModels.length === 0 ? `
               <button class="add-btn add-btn-vip ${!canCreate ? 'disabled' : ''}" data-add-vip="${cat}" ${!canCreate ? 'disabled' : ''}>💎 Adicionar Grupo VIP</button>
@@ -7495,6 +7586,11 @@ function renderCategories() {
   container.querySelectorAll('[data-add]').forEach(btn => {
     if (btn.disabled) return;
     btn.onclick = () => openModelModal(null, btn.dataset.add);
+  });
+
+  // Bind botão "Calendário do mês" (abre o calendário cheio standalone)
+  container.querySelectorAll('[data-open-calendar]').forEach(btn => {
+    btn.onclick = () => openMonthCalendar();
   });
 
   // Bind add-vip (cria campanha marcada como Grupo VIP)
@@ -7634,10 +7730,11 @@ function modelCardHTML(m) {
           ` : ''}
         </div>
 
-        ${(m.photosCount > 0 || m.videosCount > 0) ? `
+        ${(m.photosCount > 0 || m.videosCount > 0 || (m.stories && m.stories.length > 0)) ? `
           <div class="campaign-content">
-            ${m.photosCount > 0 ? `<span class="campaign-content-pill">📷 ${m.photosCount} ${m.photosCount === 1 ? 'foto' : 'fotos'}</span>` : ''}
-            ${m.videosCount > 0 ? `<span class="campaign-content-pill">🎥 ${m.videosCount} ${m.videosCount === 1 ? 'vídeo' : 'vídeos'}</span>` : ''}
+            ${m.videosCount > 0 ? `<span class="campaign-content-pill">🎞 ${m.videosCount} ${m.videosCount === 1 ? 'reel' : 'reels'}</span>` : ''}
+            ${m.photosCount > 0 ? `<span class="campaign-content-pill">🖼 ${m.photosCount} ${m.photosCount === 1 ? 'carrossel' : 'carrosséis'}</span>` : ''}
+            ${(m.stories && m.stories.length > 0) ? `<span class="campaign-content-pill">📱 ${m.stories.length} stories</span>` : ''}
           </div>
         ` : ''}
 
@@ -7780,7 +7877,7 @@ function renderVipExclusiveHTML(editable, monthMinDate, monthMaxDate) {
 function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dateMax, linkedCampaignId) {
   // linkedCampaignId: undefined (campanhas regulares), null (VIP exclusivo), 'id' (VIP por campanha)
   // Singular pra placeholder
-  const singularMap = { videos: 'vídeo', reels: 'reel', photos: 'foto', polls: 'enquete' };
+  const singularMap = { videos: 'vídeo', reels: 'reel', stories: 'story', carrossel: 'carrossel', photos: 'foto', polls: 'enquete' };
   const singular = singularMap[kind] || 'item';
   // Labels dos checkboxes — enquetes têm semântica diferente
   const labels = kind === 'polls'
@@ -7910,8 +8007,9 @@ function buildMonthCalendarData(year, remessaId, monthName, scope = 'all') {
           { arr: m.polls,  kind: 'poll',  icon: '📊' }
         ]
       : [
-          { arr: m.videos, kind: 'video', icon: '🎥' },
-          { arr: m.reels,  kind: 'reel',  icon: '🎞' }
+          { arr: m.stories,   kind: 'story',     icon: '📱' },
+          { arr: m.reels,     kind: 'reel',      icon: '🎞' },
+          { arr: m.carrossel, kind: 'carrossel', icon: '🖼' }
         ];
 
     kinds.forEach(({ arr, kind, icon }) => {
@@ -7972,10 +8070,12 @@ function setCalendarScope(scope) {
   try { localStorage.setItem('loretto_camp_cal_scope', scope); } catch (_) {}
 }
 
-function renderCampaignCalendarHTML() {
-  const yearN = modalState.year;
+function renderCampaignCalendarHTML(ctx) {
+  const yearN = (ctx && ctx.year) || modalState.year;
+  const remessaIdN = (ctx && ctx.remessaId) || modalState.remessaId;
+  const monthNameN = (ctx && ctx.month) || modalState.month;
   const scope = getCalendarScope();
-  const data = buildMonthCalendarData(yearN, modalState.remessaId, modalState.month, scope);
+  const data = buildMonthCalendarData(yearN, remessaIdN, monthNameN, scope);
   if (!data) return '<div class="form-section"><p>Mês inválido</p></div>';
 
   const { dayMap, totalScheduled, monthIdx, daysInMonth, firstWeekday, campaignPeriods } = data;
@@ -8009,7 +8109,7 @@ function renderCampaignCalendarHTML() {
         ` : ''}
         <div class="cal-cell-items">
           ${items.map(it => {
-            const kindLabel = { video: 'Vídeo', reel: 'Reel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
+            const kindLabel = { video: 'Vídeo', reel: 'Reel', story: 'Story', carrossel: 'Carrossel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
             const itemTitle = `${kindLabel}${it.isVip ? ' · VIP' : ''}: ${it.name || kindLabel} · Campanha: ${it.campaignName}`;
             return `
               <div class="cal-cell-item ${it.posted ? 'posted' : ''} ${it.isVip ? 'is-vip' : ''}" title="${escapeHtml(itemTitle)}">
@@ -8038,7 +8138,7 @@ function renderCampaignCalendarHTML() {
 
   return `
     <div class="form-section">
-      <div class="form-section-label">📅 Calendário · ${modalState.month}/${yearN} <span class="cal-scope-tag">${currentHint.tag}</span></div>
+      <div class="form-section-label">📅 Calendário · ${monthNameN}/${yearN} <span class="cal-scope-tag">${currentHint.tag}</span></div>
       <div class="form-section-hint">${currentHint.desc}</div>
 
       <div class="cal-scope-toggle" role="tablist">
@@ -8057,8 +8157,10 @@ function renderCampaignCalendarHTML() {
       ${(totalScheduled > 0 || (campaignPeriods && campaignPeriods.length > 0)) ? `
         <div class="cal-legend">
           ${campaignPeriods && campaignPeriods.length > 0 && scope !== 'vip' ? '<span><span class="cal-period-sample"></span> Período da campanha</span>' : ''}
-          <span><span class="cal-icon-sample">🎥</span> Vídeo</span>
+          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">📱</span> Stories</span>' : ''}
           ${scope !== 'vip' ? '<span><span class="cal-icon-sample">🎞</span> Reel</span>' : ''}
+          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">🖼</span> Carrossel</span>' : ''}
+          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">🎥</span> Vídeo VIP</span>' : ''}
           ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📷</span> Foto VIP</span>' : ''}
           ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📊</span> Enquete VIP</span>' : ''}
           ${scope === 'all' ? '<span class="cal-legend-vip"><span class="cal-icon-sample">💎</span> Grupo VIP</span>' : ''}
@@ -8137,6 +8239,8 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
   // Restaura aba ativa preservada (ou default 'detalhes')
   modalState._activeTab = previousActiveTab || modalState._activeTab || 'detalhes';
   const isVip = !!modalState.isVipGroup;
+  // Calendário precisa de mais largura — alarga o modal só nessa aba
+  modal.classList.toggle('modal-wide', isEdit && modalState._activeTab === 'calendario');
 
   modal.innerHTML = `
     <div class="modal-header">
@@ -8151,8 +8255,8 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         <button type="button" class="modal-tab ${modalState._activeTab === 'detalhes' ? 'active' : ''}" data-tab="detalhes">Detalhes</button>
         <button type="button" class="modal-tab ${modalState._activeTab === 'conteudos' ? 'active' : ''}" data-tab="conteudos">
           Conteúdos
-          ${(modalState.videos?.length || 0) + (modalState.reels?.length || 0) > 0
-            ? `<span class="modal-tab-badge">${(modalState.videos?.length || 0) + (modalState.reels?.length || 0)}</span>`
+          ${(modalState.videos?.length || 0) + (modalState.reels?.length || 0) + (modalState.stories?.length || 0) + (modalState.carrossel?.length || 0) + (modalState.photos?.length || 0) + (modalState.polls?.length || 0) > 0
+            ? `<span class="modal-tab-badge">${(modalState.videos?.length || 0) + (modalState.reels?.length || 0) + (modalState.stories?.length || 0) + (modalState.carrossel?.length || 0) + (modalState.photos?.length || 0) + (modalState.polls?.length || 0)}</span>`
             : ''}
         </button>
         <button type="button" class="modal-tab ${modalState._activeTab === 'calendario' ? 'active' : ''}" data-tab="calendario">Calendário</button>
@@ -8229,23 +8333,23 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
 
       <div class="form-section tab-detalhes">
         ${!isVip ? `
-          <div class="form-section-label">📦 Material a produzir</div>
+          <div class="form-section-label">📦 Material a produzir <span class="auto-calc-tag">soma automática</span></div>
 
-          <div class="field-row">
-            <div class="field">
-              <label>📷 Quantidade de fotos</label>
-              <input id="fPhotosCount" type="number" inputmode="numeric" step="1" min="0" placeholder="0" value="${modalState.photosCount || ''}" ${!editable ? 'disabled' : ''}>
+          <div class="content-summary-grid">
+            <div class="content-summary-item">
+              <span class="cs-num" id="csStories">${modalState.stories?.length || 0}</span>
+              <span class="cs-lbl">📱 Stories</span>
             </div>
-            <div class="field">
-              <label>🎥 Quantidade de vídeos</label>
-              <input id="fVideosCount" type="number" inputmode="numeric" step="1" min="0" placeholder="0" value="${modalState.videosCount || ''}" ${!editable ? 'disabled' : ''}>
+            <div class="content-summary-item">
+              <span class="cs-num" id="csReels">${modalState.reels?.length || 0}</span>
+              <span class="cs-lbl">🎞 Reels <em>(vídeos)</em></span>
+            </div>
+            <div class="content-summary-item">
+              <span class="cs-num" id="csCarrossel">${modalState.carrossel?.length || 0}</span>
+              <span class="cs-lbl">🖼 Carrossel <em>(fotos)</em></span>
             </div>
           </div>
-
-          <div class="total-display" id="totalDisplay">
-            <span class="total-label">Total de peças de conteúdo</span>
-            <span class="total-value" id="totalValue">0</span>
-          </div>
+          <div class="form-section-hint">Os números somam sozinhos conforme você adiciona itens na aba <strong>Conteúdos</strong>. Reels contam como vídeos e Carrossel como fotos.</div>
         ` : ''}
 
         <div class="field">
@@ -8264,8 +8368,9 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           ${renderVipContentTabsHTML(editable, monthMinDate, monthMaxDate)}
         ` : `
           <div class="tab-conteudos">
-            ${renderContentListHTML('videos', modalState.videos || [], '🎥 Vídeos', editable, monthMinDate, monthMaxDate)}
+            ${renderContentListHTML('stories', modalState.stories || [], '📱 Stories', editable, monthMinDate, monthMaxDate)}
             ${renderContentListHTML('reels', modalState.reels || [], '🎞 Reels', editable, monthMinDate, monthMaxDate)}
+            ${renderContentListHTML('carrossel', modalState.carrossel || [], '🖼 Carrossel', editable, monthMinDate, monthMaxDate)}
           </div>
         `}
 
@@ -8512,7 +8617,7 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         // Campanhas regulares: rerender só a seção dessa kind
         const oldSection = modal.querySelector(`[data-content-list="${kind}"]`)?.closest('.content-section');
         if (!oldSection) return;
-        const labelMap = { videos: '🎥 Vídeos', reels: '🎞 Reels', photos: '📷 Fotos', polls: '📊 Enquetes' };
+        const labelMap = { videos: '🎥 Vídeos', reels: '🎞 Reels', stories: '📱 Stories', carrossel: '🖼 Carrossel', photos: '📷 Fotos', polls: '📊 Enquetes' };
         const html = renderContentListHTML(kind, modalState[kind] || [], labelMap[kind] || kind, editable, monthMinDate, monthMaxDate);
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
@@ -8523,6 +8628,7 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
 
       // Atualiza badge de contagem total na aba (igual pro VIP e regular)
       const totalCount = (modalState.videos?.length || 0) + (modalState.reels?.length || 0)
+                       + (modalState.stories?.length || 0) + (modalState.carrossel?.length || 0)
                        + (modalState.photos?.length || 0) + (modalState.polls?.length || 0);
       const tabBtn = modal.querySelector('.modal-tab[data-tab="conteudos"]');
       if (tabBtn) {
@@ -8537,6 +8643,19 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         } else if (badge) {
           badge.remove();
         }
+      }
+
+      // Campanhas regulares: recalcula contagens (Reels = vídeos, Carrossel = fotos)
+      // e atualiza o resumo na aba Detalhes em tempo real.
+      if (!modalState.isVipGroup) {
+        modalState.videosCount = (modalState.reels?.length || 0);
+        modalState.photosCount = (modalState.carrossel?.length || 0);
+        const csS = modal.querySelector('#csStories');
+        const csR = modal.querySelector('#csReels');
+        const csC = modal.querySelector('#csCarrossel');
+        if (csS) csS.textContent = (modalState.stories?.length || 0);
+        if (csR) csR.textContent = (modalState.reels?.length || 0);
+        if (csC) csC.textContent = (modalState.carrossel?.length || 0);
       }
     };
 
@@ -8571,7 +8690,7 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
       section.querySelectorAll('[data-content-add]').forEach(btn => {
         btn.onclick = async () => {
           const k = btn.dataset.contentAdd;
-          const prefix = { videos: 'v', reels: 'r', photos: 'p', polls: 'q' }[k] || 'i';
+          const prefix = { videos: 'v', reels: 'r', stories: 's', carrossel: 'c', photos: 'p', polls: 'q' }[k] || 'i';
           // Pega vínculo de campanha do botão (apenas no VIP — em campanhas regulares vai ser undefined)
           const linkAttr = btn.dataset.linkCampaign;
           let linkedCampaignId;
@@ -8590,6 +8709,10 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           };
           if (!Array.isArray(modalState[k])) modalState[k] = [];
           modalState[k].push(newItem);
+          if (!modalState.isVipGroup) {
+            modalState.videosCount = (modalState.reels?.length || 0);
+            modalState.photosCount = (modalState.carrossel?.length || 0);
+          }
           showAutosaveStatus('saving');
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
@@ -8611,13 +8734,17 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           e.stopPropagation();
           const k = btn.dataset.contentKind;
           const itemId = btn.dataset.contentRemove;
-          const labelSing = { videos: 'vídeo', reels: 'reel', photos: 'foto', polls: 'enquete' }[k] || 'item';
+          const labelSing = { videos: 'vídeo', reels: 'reel', stories: 'story', carrossel: 'carrossel', photos: 'foto', polls: 'enquete' }[k] || 'item';
           if (!confirm(`Remover ${k === 'polls' || k === 'photos' ? 'esta' : 'este'} ${labelSing}?`)) return;
           // Remove pelo ID, não pelo índice (caso seja VIP filtrado por campanha)
           const arr = modalState[k] || [];
           const realIdx = arr.findIndex(it => it.id === itemId);
           if (realIdx < 0) return;
           arr.splice(realIdx, 1);
+          if (!modalState.isVipGroup) {
+            modalState.videosCount = (modalState.reels?.length || 0);
+            modalState.photosCount = (modalState.carrossel?.length || 0);
+          }
           showAutosaveStatus('saving');
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
@@ -8743,28 +8870,8 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
     };
   });
 
-  // Live total: photos + videos = total content pieces
-  const fPhotos = document.getElementById('fPhotosCount');
-  const fVideos = document.getElementById('fVideosCount');
-  const totalValueEl = document.getElementById('totalValue');
-
-  function updateTotal() {
-    const p = parseInt(fPhotos?.value, 10) || 0;
-    const v = parseInt(fVideos?.value, 10) || 0;
-    const total = p + v;
-    if (!totalValueEl) return;
-    if (total > 0) {
-      totalValueEl.classList.remove('empty');
-      totalValueEl.textContent = `${total} ${total === 1 ? 'peça' : 'peças'}`;
-    } else {
-      totalValueEl.classList.add('empty');
-      totalValueEl.textContent = 'preencha fotos e vídeos';
-    }
-  }
-
-  if (fPhotos) fPhotos.oninput = updateTotal;
-  if (fVideos) fVideos.oninput = updateTotal;
-  updateTotal();
+  // (Contagens de fotos/vídeos agora são automáticas pela aba Conteúdos —
+  //  Reels = vídeos, Carrossel = fotos. Sem campos manuais aqui.)
 
   // Comments
   if (isEdit && canComment) {
@@ -8933,10 +9040,10 @@ async function saveModelFromModal() {
     modalState.campaignEnd = document.getElementById('fCampaignEnd')?.value || '';
     modalState.shootStart = document.getElementById('fShootStart')?.value || '';
     modalState.shootEnd = document.getElementById('fShootEnd')?.value || '';
-    const photosRaw = document.getElementById('fPhotosCount')?.value;
-    modalState.photosCount = photosRaw ? parseInt(photosRaw, 10) : 0;
-    const videosRaw = document.getElementById('fVideosCount')?.value;
-    modalState.videosCount = videosRaw ? parseInt(videosRaw, 10) : 0;
+    // Contagens derivam das listas de conteúdo (Reels = vídeos, Carrossel = fotos).
+    // Não zera planejamento antigo quando ainda não há conteúdo na lista.
+    if ((modalState.reels?.length || 0) > 0)     modalState.videosCount = modalState.reels.length;
+    if ((modalState.carrossel?.length || 0) > 0) modalState.photosCount = modalState.carrossel.length;
   }
   modalState.category = 'Campanhas';
 
@@ -9033,14 +9140,13 @@ async function autosaveModalField(showStatus = true) {
     const fCE = document.getElementById('fCampaignEnd');
     const fSS = document.getElementById('fShootStart');
     const fSE = document.getElementById('fShootEnd');
-    const fPC = document.getElementById('fPhotosCount');
-    const fVC = document.getElementById('fVideosCount');
     if (fCS) modalState.campaignStart = fCS.value || '';
     if (fCE) modalState.campaignEnd = fCE.value || '';
     if (fSS) modalState.shootStart = fSS.value || '';
     if (fSE) modalState.shootEnd = fSE.value || '';
-    if (fPC) modalState.photosCount = fPC.value ? parseInt(fPC.value, 10) : 0;
-    if (fVC) modalState.videosCount = fVC.value ? parseInt(fVC.value, 10) : 0;
+    // Contagens derivam das listas de conteúdo (Reels = vídeos, Carrossel = fotos).
+    if ((modalState.reels?.length || 0) > 0)     modalState.videosCount = modalState.reels.length;
+    if ((modalState.carrossel?.length || 0) > 0) modalState.photosCount = modalState.carrossel.length;
 
     // Valida datas (mas não bloqueia o autosave — apenas alerta)
     const monthIdx = MONTHS_PT.indexOf(modalState.month);
@@ -9105,8 +9211,7 @@ function bindAutosaveFields() {
   const fields = [
     'fName', 'fDesc',
     'fCampaignStart', 'fCampaignEnd',
-    'fShootStart', 'fShootEnd',
-    'fPhotosCount', 'fVideosCount'
+    'fShootStart', 'fShootEnd'
   ];
   fields.forEach(id => {
     const el = document.getElementById(id);
@@ -9174,8 +9279,47 @@ async function closeModal() {
     try { await autosaveModalField(false); } catch (_) {}
   }
   document.getElementById('modalBg').classList.remove('show');
+  document.getElementById('modalContent')?.classList.remove('modal-wide');
   // Re-renderiza pra refletir mudanças do autosave nos cards
   if (state.view === 'remessa') renderRemessaView();
+}
+
+// ============================================================
+// CALENDÁRIO CHEIO DO MÊS (standalone) — abre o calendário completo
+// (todas as campanhas + Grupo VIP) numa tela grande, fora de qualquer campanha.
+// ============================================================
+function openMonthCalendar() {
+  const modal = document.getElementById('modalContent');
+  const modalBg = document.getElementById('modalBg');
+  if (!modal || !modalBg) return;
+  modal.classList.add('modal-wide');
+  const ctx = { year: state.currentYear, remessaId: state.currentRemessa, month: state.currentMonth };
+
+  const render = () => {
+    modal.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">📅 Calendário do <em>mês</em></div>
+          <div class="modal-sub">${ctx.month} ${ctx.year} · todas as campanhas + Grupo VIP</div>
+        </div>
+        <button class="modal-close" id="calStandaloneClose" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        ${renderCampaignCalendarHTML(ctx)}
+      </div>`;
+    const closeBtn = modal.querySelector('#calStandaloneClose');
+    if (closeBtn) closeBtn.onclick = () => { modal.classList.remove('modal-wide'); closeModal(); };
+    modal.querySelectorAll('[data-cal-scope]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        setCalendarScope(btn.dataset.calScope);
+        render();
+      };
+    });
+  };
+
+  render();
+  modalBg.classList.add('show');
 }
 
 // ============================================================
@@ -9687,13 +9831,16 @@ async function handleExportPlanoMesPDF() {
 
   // Totais agregados (incluindo VIP)
   let totalVideos = 0, totalReels = 0, totalPhotos = 0, totalPolls = 0;
+  let totalStories = 0, totalCarrossel = 0;
   let totalScheduled = 0, totalPosted = 0;
   monthCampaigns.forEach(c => {
-    totalVideos += (c.videos || []).length;
-    totalReels  += (c.reels  || []).length;
-    totalPhotos += (c.photos || []).length;
-    totalPolls  += (c.polls  || []).length;
-    (c.videos || []).concat(c.reels || [], c.photos || [], c.polls || []).forEach(it => {
+    totalVideos    += (c.videos    || []).length;  // VIP
+    totalReels     += (c.reels     || []).length;  // regular = vídeos
+    totalStories   += (c.stories   || []).length;  // regular
+    totalCarrossel += (c.carrossel || []).length;  // regular = fotos
+    totalPhotos    += (c.photos    || []).length;  // VIP
+    totalPolls     += (c.polls     || []).length;  // VIP
+    (c.videos || []).concat(c.reels || [], c.stories || [], c.carrossel || [], c.photos || [], c.polls || []).forEach(it => {
       if (it.publishDate) totalScheduled++;
       if (it.posted) totalPosted++;
     });
@@ -9731,17 +9878,20 @@ async function handleExportPlanoMesPDF() {
     const color = isVipPage ? '#c9a950' : pickCampaignColor(c.id);
     const videos = c.videos || [];
     const reels = c.reels || [];
+    const stories = c.stories || [];
+    const carrossel = c.carrossel || [];
     const photos = c.photos || [];
     const polls = c.polls || [];
 
-    // Monta itens — VIP tem fotos+enquetes, regulares só vídeos+reels
+    // Monta itens — VIP tem vídeos+fotos+enquetes, regulares têm stories+reels+carrossel
     const allItems = isVipPage ? [
       ...videos.map(v => ({ ...v, kind: 'video', icon: '🎥', kindLabel: 'Vídeo VIP' })),
       ...photos.map(p => ({ ...p, kind: 'photo', icon: '📷', kindLabel: 'Foto VIP' })),
       ...polls.map(p => ({ ...p, kind: 'poll', icon: '📊', kindLabel: 'Enquete' }))
     ] : [
-      ...videos.map(v => ({ ...v, kind: 'video', icon: '🎥', kindLabel: 'Vídeo' })),
-      ...reels.map(r => ({ ...r, kind: 'reel', icon: '🎞', kindLabel: 'Reel' }))
+      ...stories.map(s => ({ ...s, kind: 'story', icon: '📱', kindLabel: 'Story' })),
+      ...reels.map(r => ({ ...r, kind: 'reel', icon: '🎞', kindLabel: 'Reel' })),
+      ...carrossel.map(c2 => ({ ...c2, kind: 'carrossel', icon: '🖼', kindLabel: 'Carrossel' }))
     ];
 
     // Ordena por data (sem data fica no final)
@@ -9866,12 +10016,12 @@ async function handleExportPlanoMesPDF() {
           <div class="plan-total-label">Campanha${monthCampaignsRegulares.length !== 1 ? 's' : ''}</div>
         </div>
         <div class="plan-total-card">
-          <div class="plan-total-num">${totalVideos}</div>
-          <div class="plan-total-label">Vídeo${totalVideos !== 1 ? 's' : ''}</div>
+          <div class="plan-total-num">${totalReels}</div>
+          <div class="plan-total-label">Reel${totalReels !== 1 ? 's' : ''} (vídeos)</div>
         </div>
         <div class="plan-total-card">
-          <div class="plan-total-num">${totalReels + totalPhotos + totalPolls}</div>
-          <div class="plan-total-label">Outros${monthVipGroup ? ' (reels+VIP)' : ' (reels)'}</div>
+          <div class="plan-total-num">${totalStories + totalCarrossel + totalVideos + totalPhotos + totalPolls}</div>
+          <div class="plan-total-label">Outros${monthVipGroup ? ' (stories+carrossel+VIP)' : ' (stories+carrossel)'}</div>
         </div>
         <div class="plan-total-card">
           <div class="plan-total-num">${totalScheduled}</div>
@@ -9890,12 +10040,14 @@ async function handleExportPlanoMesPDF() {
           const color = isVipItem ? '#c9a950' : pickCampaignColor(c.id);
           const videos = (c.videos || []).length;
           const reels = (c.reels || []).length;
+          const stories = (c.stories || []).length;
+          const carrossel = (c.carrossel || []).length;
           const photos = (c.photos || []).length;
           const polls = (c.polls || []).length;
           // Contagem de itens varia por tipo
           const itemSummary = isVipItem
             ? `${videos} vídeo${videos !== 1 ? 's' : ''} · ${photos} foto${photos !== 1 ? 's' : ''} · ${polls} enquete${polls !== 1 ? 's' : ''}`
-            : `${videos} vídeo${videos !== 1 ? 's' : ''} · ${reels} reel${reels !== 1 ? 's' : ''}`;
+            : `${stories} stories · ${reels} reel${reels !== 1 ? 's' : ''} · ${carrossel} carrossel`;
           // Período: VIP é mês inteiro
           const periodText = isVipItem
             ? `Mês inteiro de ${state.currentMonth}`
@@ -10256,8 +10408,9 @@ async function handleExportCalendarPDF(scope) {
           { arr: m.polls,  kind: 'poll',  icon: '📊' }
         ]
       : [
-          { arr: m.videos, kind: 'video', icon: '🎥' },
-          { arr: m.reels,  kind: 'reel',  icon: '🎞' }
+          { arr: m.stories,   kind: 'story',     icon: '📱' },
+          { arr: m.reels,     kind: 'reel',      icon: '🎞' },
+          { arr: m.carrossel, kind: 'carrossel', icon: '🖼' }
         ];
 
     kinds.forEach(({ arr, kind, icon }) => {
@@ -10347,7 +10500,7 @@ async function handleExportCalendarPDF(scope) {
         ` : ''}
         <div class="pdf-cal-items">
           ${items.map(it => {
-            const kindLabel = { video: 'Vídeo', reel: 'Reel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
+            const kindLabel = { video: 'Vídeo', reel: 'Reel', story: 'Story', carrossel: 'Carrossel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
             return `
               <div class="pdf-cal-item ${it.posted ? 'posted' : ''} ${it.isVip ? 'is-vip' : ''}">
                 <span class="pdf-cal-item-icon">${it.icon}${it.isVip ? '💎' : ''}</span>
@@ -10376,8 +10529,9 @@ async function handleExportCalendarPDF(scope) {
           ...(m.polls  || []).map(p => ({ ...p, kind: 'poll'  }))
         ]
       : [
-          ...(m.videos || []).map(v => ({ ...v, kind: 'video' })),
-          ...(m.reels  || []).map(r => ({ ...r, kind: 'reel' }))
+          ...(m.stories   || []).map(s => ({ ...s, kind: 'story' })),
+          ...(m.reels     || []).map(r => ({ ...r, kind: 'reel' })),
+          ...(m.carrossel || []).map(c => ({ ...c, kind: 'carrossel' }))
         ];
     const color = pickCampaignColor(m.id);
     const periodTxt = (!isVip && m.campaignStart && m.campaignEnd)
@@ -10406,13 +10560,15 @@ async function handleExportCalendarPDF(scope) {
 <meta charset="UTF-8">
 <title>Loretto Scarpa · ${title} · ${subtitle}</title>
 <style>
-  @page { size: landscape; margin: 12mm; }
+  @page { size: A4 landscape; margin: 10mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: 'Helvetica', 'Arial', sans-serif;
     color: #2a2a20;
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .pdf-header {
     display: flex;
@@ -10614,6 +10770,9 @@ async function handleExportCalendarPDF(scope) {
   .pdf-print-btn:hover { background: #b59842; }
   @media print {
     .pdf-print-btn { display: none; }
+    .pdf-content { grid-template-columns: 1fr; }
+    .pdf-sidebar { margin-top: 10px; }
+    .pdf-cal-cell { page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -10657,18 +10816,18 @@ async function handleExportCalendarPDF(scope) {
 </body>
 </html>`;
 
-  // Abre numa nova janela
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const newWindow = window.open(url, '_blank');
+  // Abre numa nova janela e escreve o HTML direto. Isso evita o bug de
+  // impressão em branco que acontece com blob: URL (inclusive ao trocar
+  // a orientação pra horizontal no diálogo de impressão).
+  const newWindow = window.open('', '_blank');
   if (!newWindow) {
     showToast('Permita pop-ups pra exportar o PDF');
-    URL.revokeObjectURL(url);
     return;
   }
-  // Limpa o objeto URL depois de um tempo (após o load da janela)
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  showToast('Janela aberta — confira o conteúdo e clique em "Imprimir / PDF" quando estiver pronto');
+  newWindow.document.open();
+  newWindow.document.write(html);
+  newWindow.document.close();
+  showToast('Janela aberta — confira e clique em "Imprimir / PDF". Já vem na horizontal.');
 }
 
 // ============================================================
@@ -10713,8 +10872,9 @@ async function handleExportCSV() {
         <td ${cellCenter}>${fmtDate(m.campaignEnd)}</td>
         <td ${cellCenter}>${fmtDate(m.shootStart)}</td>
         <td ${cellCenter}>${fmtDate(m.shootEnd)}</td>
-        <td ${cellCenter}>${m.photosCount || 0}</td>
+        <td ${cellCenter}>${(m.stories || []).length}</td>
         <td ${cellCenter}>${m.videosCount || 0}</td>
+        <td ${cellCenter}>${m.photosCount || 0}</td>
         <td ${cellCenter}><b>${(m.photosCount || 0) + (m.videosCount || 0)}</b></td>
         <td ${cellStyle}>${escapeHtml(status)}</td>
         <td ${cellStyle.replace('font-size:11px', 'font-size:10px')}>${escapeHtml(commentsText)}</td>
@@ -10724,13 +10884,15 @@ async function handleExportCSV() {
 
   const totalPhotos = models.reduce((s, m) => s + (m.photosCount || 0), 0);
   const totalVideos = models.reduce((s, m) => s + (m.videosCount || 0), 0);
+  const totalStories = models.reduce((s, m) => s + (m.stories || []).length, 0);
   const totalContent = totalPhotos + totalVideos;
 
   const totalRow = `
     <tr>
       <td ${cellStyle} colspan="6" style="padding:12px 10px;border:1px solid #ccc;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;text-align:right;background:#1a1a1a;color:#c9a950;text-transform:uppercase;letter-spacing:0.1em">TOTAL GERAL · ${models.length} ${models.length === 1 ? 'campanha' : 'campanhas'}</td>
-      <td ${cellCenter} style="padding:12px 10px;background:#1a1a1a;color:white;font-weight:bold;font-size:13px">${totalPhotos}</td>
+      <td ${cellCenter} style="padding:12px 10px;background:#1a1a1a;color:white;font-weight:bold;font-size:13px">${totalStories}</td>
       <td ${cellCenter} style="padding:12px 10px;background:#1a1a1a;color:white;font-weight:bold;font-size:13px">${totalVideos}</td>
+      <td ${cellCenter} style="padding:12px 10px;background:#1a1a1a;color:white;font-weight:bold;font-size:13px">${totalPhotos}</td>
       <td ${cellCenter} style="padding:12px 10px;background:#c9a950;color:#fff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold">${totalContent}</td>
       <td ${cellStyle} colspan="2" style="background:#1a1a1a"></td>
     </tr>
@@ -10757,7 +10919,7 @@ async function handleExportCSV() {
 <body>
 <table style="border-collapse:collapse">
   <tr>
-    <td colspan="11" style="padding:16px;background:#1a1a1a;color:#c9a950;font-family:Georgia,serif;font-size:18px;font-style:italic;text-align:center;border:1px solid #444">
+    <td colspan="12" style="padding:16px;background:#1a1a1a;color:#c9a950;font-family:Georgia,serif;font-size:18px;font-style:italic;text-align:center;border:1px solid #444">
       Loretto Scarpa &middot; Campanhas &middot; ${state.currentMonth} ${state.currentYear}
     </td>
   </tr>
@@ -10768,8 +10930,9 @@ async function handleExportCSV() {
     <td ${headerStyle}>Fim (campanha)</td>
     <td ${headerStyle}>Início (gravação)</td>
     <td ${headerStyle}>Fim (gravação)</td>
-    <td ${headerStyle}>📷 Fotos</td>
-    <td ${headerStyle}>🎥 Vídeos</td>
+    <td ${headerStyle}>📱 Stories</td>
+    <td ${headerStyle}>🎞 Reels</td>
+    <td ${headerStyle}>🖼 Carrossel</td>
     <td ${headerStyle}>Total Peças</td>
     <td ${headerStyle}>Status</td>
     <td ${headerStyle}>Comentários</td>
