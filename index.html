@@ -2802,7 +2802,9 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     align-items: center;
     gap: 8px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
   }
+  .content-item-row .content-item-name { flex: 1 1 60%; min-width: 140px; }
 
   .content-item-name {
     flex: 1;
@@ -2839,6 +2841,19 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     border-color: rgba(180, 50, 50, 0.6);
     color: #e88;
   }
+
+  .content-item-move {
+    background: var(--surface);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 11px;
+    padding: 4px 6px;
+    cursor: pointer;
+    max-width: 110px;
+  }
+  .content-item-move:hover { border-color: var(--gold-soft); color: var(--text); }
 
   .content-item-checks {
     display: flex;
@@ -2972,6 +2987,13 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
   .cal-icon-sample {
     font-size: 12px;
   }
+  .cal-color-sample {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 2px;
+  }
 
   .cal-header {
     display: grid;
@@ -3042,32 +3064,24 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 
   .cal-cell-item {
     background: var(--surface);
-    border-left: 2px solid var(--gold-soft);
+    border-left: 3px solid var(--gold-soft);
     padding: 3px 6px;
     border-radius: 2px;
     font-family: 'Barlow', sans-serif;
     font-size: 10px;
-    color: var(--text-2);
+    color: var(--text);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     overflow: hidden;
   }
-
-  .cal-cell-item.posted {
-    background: rgba(110, 133, 64, 0.15);
-    border-left-color: var(--green);
-    color: var(--green-soft);
+  .cal-cell-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
-
-  .cal-cell-item.is-vip {
-    background: rgba(212, 184, 94, 0.10);
-    border-left-color: var(--gold);
-  }
-  .cal-cell-item.is-vip.posted {
-    background: rgba(110, 133, 64, 0.15);
-    border-left-color: var(--green);
-  }
+  .cal-cell-item.posted { opacity: 0.6; }
+  .cal-cell-item.posted .cal-cell-name { text-decoration: line-through; }
 
   .cal-cell-vip-mark {
     font-size: 8px;
@@ -3640,6 +3654,17 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
   /* Calendário precisa de mais espaço horizontal */
   .modal.modal-wide { max-width: 820px; }
   @media (max-width: 860px) { .modal.modal-wide { max-width: 520px; } }
+
+  /* Calendário em tela cheia (visualização confortável) */
+  .modal.modal-fullscreen {
+    max-width: 96vw;
+    width: 96vw;
+    max-height: 94vh;
+    max-height: 94dvh;
+  }
+  .modal.modal-fullscreen .cal-header,
+  .modal.modal-fullscreen .cal-grid { min-width: 0; }
+  .modal.modal-fullscreen .cal-cell { min-height: 96px; }
 
   .modal-header { flex: 0 0 auto; }
   .modal-tabs { flex: 0 0 auto; }
@@ -5934,8 +5959,11 @@ const VIEW_MODE_KEY = 'loretto_camp_view_mode';
 // Firestore collection names — separadas das de coleções
 const FIRESTORE_COLLECTION = 'campanhas_items';        // /campanhas_items/{year}
 const FIRESTORE_USERS_COLLECTION = 'campanhas_users';  // /campanhas_users/{userId}
-const STORAGE_BUCKET_MODELS = 'campanhas_items';       // path prefix in Storage
+const STORAGE_BUCKET_MODELS = 'campanhas_items';       // path prefix in Storage (legado)
 const STORAGE_BUCKET_USERS  = 'campanhas_users';
+// Fotos agora ficam no Firestore (sincroniza no plano grátis, sem precisar de Storage/Blaze).
+// As regras atuais do Firestore já liberam esta coleção (regra "todo o resto", login com e-mail).
+const FIRESTORE_PHOTOS_COLLECTION = 'campanhas_fotos';  // /campanhas_fotos/{photoId} -> { data: base64 }
 
 // Real-time listener cleanup function
 let firestoreUnsubscribe = null;
@@ -6068,51 +6096,51 @@ async function saveAllToFirestore() {
 // ============================================================
 // PHOTO STORAGE
 // ============================================================
+// ID seguro de documento (sem barras)
+function photoDocId(photoId) {
+  return String(photoId).replace(/[\/\\.#$\[\]]/g, '_');
+}
+
 async function savePhoto(photoId, base64) {
   state.photoCache.set(photoId, base64);
 
   // 1) Backup LOCAL sempre — rápido e confiável. Garante que a foto aparece
-  //    imediatamente, mesmo se o Firebase Storage estiver bloqueado/indisponível.
-  let localOk = false;
+  //    imediatamente pra quem subiu, mesmo offline.
   try {
     if (hasStorage) {
       await window.storage.set(PHOTO_PREFIX + photoId, base64, true);
     } else {
       localStorage.setItem(PHOTO_PREFIX + photoId, base64);
     }
-    localOk = true;
   } catch (err) {
     if (err.name === 'QuotaExceededError' || /quota/i.test(err.message || '')) {
       showToast('⚠ Sem espaço no aparelho — apague campanhas antigas pra liberar memória');
     }
   }
 
-  // 2) Sobe pro Firebase em SEGUNDO PLANO (sem travar a tela). Se falhar,
-  //    a foto continua salva localmente e no cache da sessão.
+  // 2) Sincroniza no Firestore (em 2º plano, sem travar a tela). Assim a foto
+  //    aparece pra Larissa, Lorrayne e diretoria. Sem depender do Storage/Blaze.
   if (useFirebase()) {
-    savePhotoToFirebase(photoId, base64).catch(() => {});
+    savePhotoToFirestore(photoId, base64).catch(() => {});
   }
 
-  return true; // a interface segue na hora (foto já está no cache + local)
+  return true;
 }
 
-async function savePhotoToFirebase(photoId, base64) {
+async function savePhotoToFirestore(photoId, base64) {
   setSyncStatus('syncing', 'Enviando foto...');
   try {
-    // Convert base64 to blob
-    const response = await fetch(base64);
-    const blob = await response.blob();
-
-    const ref = firebaseStorage.ref(`${STORAGE_BUCKET_MODELS}/${photoId}.jpg`);
-    // Timeout de 20s: se o Storage não responder, não fica preso pra sempre.
     await Promise.race([
-      ref.put(blob, { contentType: 'image/jpeg' }),
+      firebaseDb.collection(FIRESTORE_PHOTOS_COLLECTION).doc(photoDocId(photoId)).set({
+        data: base64,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
     ]);
     setSyncStatus('', 'Sincronizado');
     return true;
   } catch (err) {
-    console.error('Firebase photo upload failed:', err);
+    console.error('Firestore photo save failed:', err);
     setSyncStatus('offline', 'Foto salva no aparelho');
     return false;
   }
@@ -6123,12 +6151,24 @@ async function loadPhoto(photoId) {
 
   if (useFirebase()) {
     try {
-      const ref = firebaseStorage.ref(`${STORAGE_BUCKET_MODELS}/${photoId}.jpg`);
-      const url = await ref.getDownloadURL();
-      state.photoCache.set(photoId, url);
-      return url;
+      const snap = await Promise.race([
+        firebaseDb.collection(FIRESTORE_PHOTOS_COLLECTION).doc(photoDocId(photoId)).get(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      ]);
+      if (snap && snap.exists) {
+        const data = snap.data() && snap.data().data;
+        if (data) {
+          state.photoCache.set(photoId, data);
+          // Reescreve o backup local (caso a foto tenha vindo de outro aparelho)
+          try {
+            if (hasStorage) await window.storage.set(PHOTO_PREFIX + photoId, data, true);
+            else localStorage.setItem(PHOTO_PREFIX + photoId, data);
+          } catch (_) {}
+          return data;
+        }
+      }
     } catch (err) {
-      // Photo doesn't exist in Firebase — try localStorage
+      // Sem conexão / não encontrado no Firestore — tenta o backup local
     }
   }
 
@@ -6154,10 +6194,10 @@ async function loadPhoto(photoId) {
 async function deletePhoto(photoId) {
   state.photoCache.delete(photoId);
 
-  // Try delete from Firebase
+  // Apaga do Firestore
   if (useFirebase()) {
     try {
-      await firebaseStorage.ref(`${STORAGE_BUCKET_MODELS}/${photoId}.jpg`).delete();
+      await firebaseDb.collection(FIRESTORE_PHOTOS_COLLECTION).doc(photoDocId(photoId)).delete();
     } catch (err) { /* may not exist */ }
   }
 
@@ -6240,15 +6280,22 @@ async function loadUserPhoto(userId) {
     return DEFAULT_USER_PHOTOS[userId];
   }
 
-  // 3) Firebase Storage (último recurso, só pra users sem DEFAULT — ex: admin)
-  // Obs: pode falhar com CORS se o bucket não tiver CORS configurado;
-  // try/catch silencioso garante que isso não trava nada.
+  // 3) Firestore (último recurso, pra users sem DEFAULT — ex: admin — e cross-device)
   if (useFirebase()) {
     try {
-      const ref = firebaseStorage.ref(`${STORAGE_BUCKET_USERS}/${userId}.jpg`);
-      const url = await ref.getDownloadURL();
-      state.userPhotos[userId] = url;
-      return url;
+      const snap = await Promise.race([
+        firebaseDb.collection(FIRESTORE_PHOTOS_COLLECTION).doc('user_' + photoDocId(userId)).get(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      ]);
+      if (snap && snap.exists && snap.data() && snap.data().data) {
+        const data = snap.data().data;
+        state.userPhotos[userId] = data;
+        try {
+          if (hasStorage) await window.storage.set(USER_PHOTO_PREFIX + userId, data, true);
+          else localStorage.setItem(USER_PHOTO_PREFIX + userId, data);
+        } catch (_) {}
+        return data;
+      }
     } catch (err) { /* fall through */ }
   }
 
@@ -6259,18 +6306,7 @@ async function loadUserPhoto(userId) {
 async function saveUserPhoto(userId, base64) {
   state.userPhotos[userId] = base64;
 
-  if (useFirebase()) {
-    try {
-      const response = await fetch(base64);
-      const blob = await response.blob();
-      const ref = firebaseStorage.ref(`${STORAGE_BUCKET_USERS}/${userId}.jpg`);
-      await ref.put(blob, { contentType: 'image/jpeg' });
-      return;
-    } catch (err) {
-      console.error('Firebase user photo upload failed:', err);
-    }
-  }
-
+  // Backup local sempre
   try {
     if (hasStorage) {
       await window.storage.set(USER_PHOTO_PREFIX + userId, base64, true);
@@ -6280,6 +6316,14 @@ async function saveUserPhoto(userId, base64) {
   } catch (err) {
     showToast('Erro ao salvar foto');
     console.error(err);
+  }
+
+  // Sincroniza no Firestore (2º plano) — sem Storage/Blaze
+  if (useFirebase()) {
+    firebaseDb.collection(FIRESTORE_PHOTOS_COLLECTION).doc('user_' + photoDocId(userId)).set({
+      data: base64,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
   }
 }
 
@@ -7894,6 +7938,13 @@ function renderContentListHTML(kind, items, sectionLabel, editable, dateMin, dat
                  value="${escapeHtml(item.name || '')}"
                  data-content-field="name" data-content-kind="${kind}" data-content-id="${itemId}"
                  ${!editable ? 'disabled' : ''}>
+          ${editable && ['stories','reels','carrossel'].includes(kind) ? `
+            <select class="content-item-move" data-content-move-id="${itemId}" data-content-move-from="${kind}" title="Mover pra outra aba">
+              <option value="">⇄ mover</option>
+              ${kind !== 'stories' ? '<option value="stories">→ Stories</option>' : ''}
+              ${kind !== 'reels' ? '<option value="reels">→ Reels</option>' : ''}
+              ${kind !== 'carrossel' ? '<option value="carrossel">→ Carrossel</option>' : ''}
+            </select>` : ''}
           ${editable ? `<button class="content-item-remove" data-content-remove="${itemId}" data-content-kind="${kind}" title="Remover">×</button>` : ''}
         </div>
         <div class="content-item-checks">
@@ -8070,6 +8121,24 @@ function setCalendarScope(scope) {
   try { localStorage.setItem('loretto_camp_cal_scope', scope); } catch (_) {}
 }
 
+// Cor por TIPO de conteúdo (4 tipos no calendário). Grupo VIP = uma cor só,
+// independente do sub-tipo. Regulares por aba: Stories / Reels / Carrossel.
+const CONTENT_COLORS = {
+  vip:       '#9b6bc9', // roxo — Grupo VIP
+  story:     '#4f86c6', // azul — Stories
+  reel:      '#c9a950', // dourado — Reels (vídeos)
+  carrossel: '#cf7a3f'  // terracota — Carrossel (fotos)
+};
+function contentColor(kind, isVip) {
+  if (isVip) return CONTENT_COLORS.vip;
+  return CONTENT_COLORS[kind] || CONTENT_COLORS.reel;
+}
+function contentTypeLabel(kind, isVip) {
+  if (isVip) return 'VIP';
+  return { story: 'Stories', reel: 'Reel', carrossel: 'Carrossel',
+           video: 'Vídeo', photo: 'Foto', poll: 'Enquete' }[kind] || 'Item';
+}
+
 function renderCampaignCalendarHTML(ctx) {
   const yearN = (ctx && ctx.year) || modalState.year;
   const remessaIdN = (ctx && ctx.remessaId) || modalState.remessaId;
@@ -8109,11 +8178,12 @@ function renderCampaignCalendarHTML(ctx) {
         ` : ''}
         <div class="cal-cell-items">
           ${items.map(it => {
-            const kindLabel = { video: 'Vídeo', reel: 'Reel', story: 'Story', carrossel: 'Carrossel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
-            const itemTitle = `${kindLabel}${it.isVip ? ' · VIP' : ''}: ${it.name || kindLabel} · Campanha: ${it.campaignName}`;
+            const kindLabel = contentTypeLabel(it.kind, it.isVip);
+            const color = contentColor(it.kind, it.isVip);
+            const itemTitle = `${kindLabel}${it.isVip ? ' (Grupo VIP)' : ''}: ${it.name || kindLabel} · Campanha: ${it.campaignName}`;
             return `
-              <div class="cal-cell-item ${it.posted ? 'posted' : ''} ${it.isVip ? 'is-vip' : ''}" title="${escapeHtml(itemTitle)}">
-                <span class="cal-cell-icon">${it.icon}${it.isVip ? '<span class="cal-cell-vip-mark">💎</span>' : ''}</span>
+              <div class="cal-cell-item ${it.posted ? 'posted' : ''}" title="${escapeHtml(itemTitle)}" style="border-left-color:${color}; background:${color}1f;">
+                <span class="cal-cell-dot" style="background:${color}"></span>
                 <span class="cal-cell-name">${escapeHtml(it.name || kindLabel)}</span>
               </div>
             `;
@@ -8157,14 +8227,11 @@ function renderCampaignCalendarHTML(ctx) {
       ${(totalScheduled > 0 || (campaignPeriods && campaignPeriods.length > 0)) ? `
         <div class="cal-legend">
           ${campaignPeriods && campaignPeriods.length > 0 && scope !== 'vip' ? '<span><span class="cal-period-sample"></span> Período da campanha</span>' : ''}
-          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">📱</span> Stories</span>' : ''}
-          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">🎞</span> Reel</span>' : ''}
-          ${scope !== 'vip' ? '<span><span class="cal-icon-sample">🖼</span> Carrossel</span>' : ''}
-          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">🎥</span> Vídeo VIP</span>' : ''}
-          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📷</span> Foto VIP</span>' : ''}
-          ${scope !== 'campanhas' ? '<span><span class="cal-icon-sample">📊</span> Enquete VIP</span>' : ''}
-          ${scope === 'all' ? '<span class="cal-legend-vip"><span class="cal-icon-sample">💎</span> Grupo VIP</span>' : ''}
-          <span class="cal-legend-posted"><span class="cal-icon-sample">✓</span> Postado</span>
+          ${scope !== 'vip' ? `<span><span class="cal-color-sample" style="background:${CONTENT_COLORS.story}"></span> Stories</span>` : ''}
+          ${scope !== 'vip' ? `<span><span class="cal-color-sample" style="background:${CONTENT_COLORS.reel}"></span> Reels (vídeos)</span>` : ''}
+          ${scope !== 'vip' ? `<span><span class="cal-color-sample" style="background:${CONTENT_COLORS.carrossel}"></span> Carrossel (fotos)</span>` : ''}
+          ${scope !== 'campanhas' ? `<span><span class="cal-color-sample" style="background:${CONTENT_COLORS.vip}"></span> Grupo VIP</span>` : ''}
+          <span class="cal-legend-posted"><span class="cal-color-sample" style="background:transparent;border:1px solid var(--text-3);opacity:.6"></span> Postado (riscado)</span>
         </div>
       ` : ''}
 
@@ -8376,6 +8443,7 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
 
         <!-- ABA: CALENDÁRIO (mostra todos os conteúdos com data de publicação no calendário do mês) -->
         <div class="tab-calendario">
+          <button type="button" class="content-add-btn" id="openFullCalBtn" style="margin-bottom:14px;">📅 Abrir calendário em tela cheia</button>
           ${renderCampaignCalendarHTML()}
         </div>
 
@@ -8576,16 +8644,20 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
     // Re-renderiza só o conteúdo da aba calendário
     const calWrapper = modal.querySelector('.tab-calendario');
     if (calWrapper) {
-      calWrapper.innerHTML = renderCampaignCalendarHTML();
+      calWrapper.innerHTML = '<button type="button" class="content-add-btn" id="openFullCalBtn" style="margin-bottom:14px;">📅 Abrir calendário em tela cheia</button>' + renderCampaignCalendarHTML();
       // Re-bind dos NOVOS botões
       calWrapper.querySelectorAll('[data-cal-scope]').forEach(b => {
         b.onclick = handleScopeToggle;
       });
+      const fcb = calWrapper.querySelector('#openFullCalBtn');
+      if (fcb) fcb.onclick = () => openMonthCalendar();
     }
   };
   modal.querySelectorAll('[data-cal-scope]').forEach(btn => {
     btn.onclick = handleScopeToggle;
   });
+  const _fullCalBtn = modal.querySelector('#openFullCalBtn');
+  if (_fullCalBtn) _fullCalBtn.onclick = () => openMonthCalendar();
 
   // ============== CONTENT LIST (Vídeos / Reels / Photos / Polls) ==============
   if (isEdit && editable) {
@@ -8749,6 +8821,32 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
           await upsertModel(state.currentYear, modalState);
           showAutosaveStatus('saved');
           rerenderContentSection(k);
+        };
+      });
+
+      // Mover conteúdo entre abas (Stories / Reels / Carrossel)
+      section.querySelectorAll('[data-content-move-id]').forEach(sel => {
+        sel.onchange = async () => {
+          const id = sel.dataset.contentMoveId;
+          const from = sel.dataset.contentMoveFrom;
+          const to = sel.value;
+          if (!to || to === from) { sel.value = ''; return; }
+          if (!Array.isArray(modalState[from])) return;
+          if (!Array.isArray(modalState[to])) modalState[to] = [];
+          const i = modalState[from].findIndex(x => x.id === id);
+          if (i < 0) return;
+          const [moved] = modalState[from].splice(i, 1);
+          modalState[to].push(moved);
+          if (!modalState.isVipGroup) {
+            modalState.videosCount = (modalState.reels?.length || 0);
+            modalState.photosCount = (modalState.carrossel?.length || 0);
+          }
+          showAutosaveStatus('saving');
+          await upsertModel(state.currentYear, modalState);
+          showAutosaveStatus('saved');
+          showToast('Conteúdo movido ✓');
+          // Reabre o modal (mantém a aba Conteúdos) pra atualizar as duas listas
+          openModelModal(modalState.id);
         };
       });
 
@@ -9279,7 +9377,7 @@ async function closeModal() {
     try { await autosaveModalField(false); } catch (_) {}
   }
   document.getElementById('modalBg').classList.remove('show');
-  document.getElementById('modalContent')?.classList.remove('modal-wide');
+  document.getElementById('modalContent')?.classList.remove('modal-wide','modal-fullscreen');
   // Re-renderiza pra refletir mudanças do autosave nos cards
   if (state.view === 'remessa') renderRemessaView();
 }
@@ -9292,7 +9390,8 @@ function openMonthCalendar() {
   const modal = document.getElementById('modalContent');
   const modalBg = document.getElementById('modalBg');
   if (!modal || !modalBg) return;
-  modal.classList.add('modal-wide');
+  modal.classList.remove('modal-wide');
+  modal.classList.add('modal-fullscreen');
   const ctx = { year: state.currentYear, remessaId: state.currentRemessa, month: state.currentMonth };
 
   const render = () => {
@@ -9308,7 +9407,7 @@ function openMonthCalendar() {
         ${renderCampaignCalendarHTML(ctx)}
       </div>`;
     const closeBtn = modal.querySelector('#calStandaloneClose');
-    if (closeBtn) closeBtn.onclick = () => { modal.classList.remove('modal-wide'); closeModal(); };
+    if (closeBtn) closeBtn.onclick = () => { modal.classList.remove('modal-wide','modal-fullscreen'); closeModal(); };
     modal.querySelectorAll('[data-cal-scope]').forEach(btn => {
       btn.onclick = (e) => {
         e.preventDefault();
@@ -9926,7 +10025,7 @@ async function handleExportPlanoMesPDF() {
               <tr class="${it.posted ? 'row-posted' : ''} ${!it.publishDate ? 'row-no-date' : ''}">
                 <td class="col-day">${it.publishDate ? fmtWeekday(it.publishDate) : '—'}</td>
                 <td class="col-when">${fmtBR(it.publishDate)}</td>
-                <td class="col-type">${it.icon} ${it.kindLabel}</td>
+                <td class="col-type"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${contentColor(it.kind, isVipPage)};margin-right:4px;vertical-align:middle;"></span>${it.kindLabel}</td>
                 <td class="col-title">${escapeHtml(it.name || '(sem nome)')}</td>
                 <td class="col-status">${statusBadges.join(' ') || '<span class="badge-status badge-none">○</span>'}</td>
               </tr>
@@ -10500,10 +10599,11 @@ async function handleExportCalendarPDF(scope) {
         ` : ''}
         <div class="pdf-cal-items">
           ${items.map(it => {
-            const kindLabel = { video: 'Vídeo', reel: 'Reel', story: 'Story', carrossel: 'Carrossel', photo: 'Foto', poll: 'Enquete' }[it.kind] || 'Item';
+            const kindLabel = contentTypeLabel(it.kind, it.isVip);
+            const color = contentColor(it.kind, it.isVip);
             return `
-              <div class="pdf-cal-item ${it.posted ? 'posted' : ''} ${it.isVip ? 'is-vip' : ''}">
-                <span class="pdf-cal-item-icon">${it.icon}${it.isVip ? '💎' : ''}</span>
+              <div class="pdf-cal-item ${it.posted ? 'posted' : ''}" style="border-left-color:${color}; background:${color}1f;">
+                <span class="pdf-cal-item-dot" style="background:${color}"></span>
                 <span class="pdf-cal-item-name">${escapeHtml(it.name || kindLabel)}</span>
                 <span class="pdf-cal-item-camp">${escapeHtml(it.campaignName)}</span>
                 ${it.posted ? '<span class="pdf-cal-item-check">✓</span>' : ''}
@@ -10676,15 +10776,19 @@ async function handleExportCalendarPDF(scope) {
     gap: 2px;
     align-items: center;
   }
-  .pdf-cal-item.posted {
-    background: #ebf2dc;
-    border-left-color: #6e8540;
-  }
-  .pdf-cal-item-icon { font-size: 9px; }
-  .pdf-cal-item-name { font-weight: bold; color: #2a2a20; }
+  .pdf-cal-item.posted { opacity: 0.6; }
+  .pdf-cal-item.posted .pdf-cal-item-name { text-decoration: line-through; }
+  .pdf-cal-item-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }  .pdf-cal-item-name { font-weight: bold; color: #2a2a20; }
   .pdf-cal-item-camp { color: #6e6a5d; font-size: 7.5px; flex-basis: 100%; }
   .pdf-cal-item-check { color: #6e8540; font-weight: bold; margin-left: auto; }
-  .pdf-cal-item.is-vip { background: #fdf6e3; border-left-color: #c9a950; }
+  .pdf-cal-legend {
+    display: flex; flex-wrap: wrap; gap: 4mm;
+    margin-top: 3mm; padding-top: 2.5mm;
+    border-top: 1px solid #ddd;
+    font-size: 8.5pt; color: #555;
+  }
+  .pdf-cal-legend span { display: inline-flex; align-items: center; gap: 1.5mm; }
+  .pdf-cal-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
   /* Faixas dos períodos das campanhas (banner colorido nos dias) */
   .pdf-cal-periods {
@@ -10777,7 +10881,7 @@ async function handleExportCalendarPDF(scope) {
 </style>
 </head>
 <body>
-<button class="pdf-print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+<button class="pdf-print-btn" onclick="window.focus();setTimeout(function(){window.print();},180)">🖨️ Imprimir / Salvar PDF</button>
 
 <div class="pdf-header">
   <div class="pdf-brand"><em>Loretto</em> Scarpa</div>
@@ -10800,6 +10904,13 @@ async function handleExportCalendarPDF(scope) {
       ${weekdays.map(w => `<div class="pdf-cal-weekday">${w}</div>`).join('')}
     </div>
     <div class="pdf-cal-grid">${cells.join('')}</div>
+    <div class="pdf-cal-legend">
+      ${scope !== 'vip' ? `<span><i style="background:${CONTENT_COLORS.story}"></i> Stories</span>` : ''}
+      ${scope !== 'vip' ? `<span><i style="background:${CONTENT_COLORS.reel}"></i> Reels (vídeos)</span>` : ''}
+      ${scope !== 'vip' ? `<span><i style="background:${CONTENT_COLORS.carrossel}"></i> Carrossel (fotos)</span>` : ''}
+      ${scope !== 'campanhas' ? `<span><i style="background:${CONTENT_COLORS.vip}"></i> Grupo VIP</span>` : ''}
+      <span><i style="background:transparent;border:1px solid #999"></i> Postado (riscado)</span>
+    </div>
   </div>
   <div class="pdf-sidebar">
     <h3>${scope === 'vip' ? '💎 Grupo VIP' : scope === 'campanhas' ? '🎯 Campanhas' : 'Tudo do mês'}</h3>
@@ -11423,7 +11534,7 @@ async function _legacyHandleGenerateSummary(monthFilter) {
 </style>
 </head>
 <body>
-  <button class="print-btn" onclick="window.print()">Imprimir / PDF</button>
+  <button class="print-btn" onclick="window.focus();setTimeout(function(){window.print();},180)">Imprimir / PDF</button>
   <div class="doc">
     <div class="doc-header">
       <div>
@@ -12296,7 +12407,7 @@ async function handleGenerateSupplierSummary() {
 <body>
 <div class="print-bar">
   <span class="print-bar-hint">💡 Salve como PDF e envie no WhatsApp</span>
-  <button class="print-btn" onclick="window.print()">⎙ Salvar PDF / Imprimir</button>
+  <button class="print-btn" onclick="window.focus();setTimeout(function(){window.print();},180)">⎙ Salvar PDF / Imprimir</button>
 </div>
 <div class="doc">
   ${supplierSections}
