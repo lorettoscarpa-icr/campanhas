@@ -3027,6 +3027,63 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     font-family: 'DM Mono', monospace;
   }
 
+  /* ===== Barra principal do calendário (estilo RH) ===== */
+  .cal-main-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .cal-main-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cal-nav-arrow {
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg-2);
+    color: var(--text); font-size: 18px; cursor: pointer; line-height: 1;
+    transition: all 0.15s;
+  }
+  .cal-nav-arrow:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .cal-nav-arrow:disabled { opacity: 0.3; cursor: default; }
+  .cal-main-month {
+    font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600;
+    color: var(--text); min-width: 110px; text-align: center;
+  }
+  .cal-ghost-btn {
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-2); font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cal-ghost-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .cal-main-summary {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-left: 6px;
+  }
+  .cal-main-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .cv-toggle { display: inline-flex; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+  .cv-btn {
+    padding: 6px 12px; border: none; background: transparent;
+    color: var(--text-2); font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600;
+    border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .cv-btn.active { background: var(--gold); color: var(--bg); }
+
+  .cal-add-btn {
+    padding: 9px 16px; border-radius: 8px;
+    border: 1px solid var(--gold); background: var(--gold); color: var(--bg);
+    font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cal-add-btn:hover { filter: brightness(1.08); }
+  .cal-add-btn.cal-add-vip { background: transparent; color: var(--gold); }
+  .cal-add-btn.cal-add-vip:hover { background: var(--surface-2); }
+
+  .cal-inline-wrap .campaign-calendar { overflow-x: auto; }
+  .cal-inline-wrap .form-section { padding: 0; border: none; background: transparent; }
+
   .cal-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -5966,6 +6023,7 @@ const state = {
   userPhotos: {}, // userId -> base64
   currentUser: null,
   viewMode: 'grid', // grid | lookbook
+  contentView: 'calendar', // calendar | list — visão principal do mês (padrão: calendário)
   theme: 'dark', // dark | light
   loading: false
 };
@@ -5987,6 +6045,7 @@ const USER_KEY = 'loretto_camp_current_user';
 const USER_PHOTO_PREFIX = 'loretto_camp_user_photo_';
 const THEME_KEY = 'loretto_camp_theme';
 const VIEW_MODE_KEY = 'loretto_camp_view_mode';
+const CONTENT_VIEW_KEY = 'loretto_camp_content_view';
 
 // Firestore collection names — separadas das de coleções
 const FIRESTORE_COLLECTION = 'campanhas_items';        // /campanhas_items/{year}
@@ -7192,10 +7251,116 @@ async function hydrateFooterAvatars() {
 // ============================================================
 // RENDER — REMESSA VIEW
 // ============================================================
+function persistContentView() {
+  try {
+    if (hasStorage) window.storage.set(CONTENT_VIEW_KEY, state.contentView, false);
+    else localStorage.setItem(CONTENT_VIEW_KEY, state.contentView);
+  } catch (_) {}
+}
+
+// Sequência de todos os meses do ano (atravessa trimestres) pra navegação ‹ ›
+function getMonthSequence() {
+  const seq = [];
+  REMESSAS.forEach(r => r.months.forEach(m => seq.push({ month: m, remessaId: r.id })));
+  return seq;
+}
+
+// ============================================================
+// VISÃO PRINCIPAL = CALENDÁRIO (estilo RH: navega mês, Hoje, + Adicionar)
+// ============================================================
+function renderRemessaCalendar(root, r) {
+  const ctx = { year: state.currentYear, remessaId: state.currentRemessa, month: state.currentMonth };
+  const seq = getMonthSequence();
+  const curIdx = seq.findIndex(x => x.remessaId === state.currentRemessa && x.month === state.currentMonth);
+  const monthModels = getYearData(state.currentYear).models.filter(m => m.remessaId === state.currentRemessa && m.month === state.currentMonth);
+  const campCount = monthModels.filter(m => !m.isVipGroup).length;
+  const hasVip = monthModels.some(m => m.isVipGroup);
+
+  root.innerHTML = `
+    <section class="headline fade-in" style="margin-bottom:16px;">
+      <div class="headline-eyebrow">${r.label} Trimestre · ${state.currentYear}</div>
+      <h1 class="headline-title">Calendário de <em>conteúdo</em></h1>
+    </section>
+
+    <div class="cal-main-bar">
+      <div class="cal-main-nav">
+        <button class="cal-nav-arrow" id="calPrevMonth" type="button" ${curIdx <= 0 ? 'disabled' : ''}>‹</button>
+        <div class="cal-main-month">${state.currentMonth}</div>
+        <button class="cal-nav-arrow" id="calNextMonth" type="button" ${curIdx >= seq.length - 1 ? 'disabled' : ''}>›</button>
+        <button class="cal-ghost-btn" id="calTodayBtn" type="button">Hoje</button>
+        <span class="cal-main-summary">${campCount} ${campCount === 1 ? 'campanha' : 'campanhas'}${hasVip ? ' · 💎 VIP' : ''}</span>
+      </div>
+      <div class="cal-main-actions">
+        <div class="cv-toggle">
+          <button class="cv-btn active" data-cv="calendar" type="button">📅 Calendário</button>
+          <button class="cv-btn" data-cv="list" type="button">📋 Lista</button>
+        </div>
+        ${canUser('create') ? `
+          <button class="cal-add-btn" id="calAddCampaign" type="button">＋ Campanha</button>
+          <button class="cal-add-btn cal-add-vip" id="calAddVip" type="button">💎 Grupo VIP</button>
+        ` : ''}
+      </div>
+    </div>
+
+    <div id="calInlineWrap" class="cal-inline-wrap">
+      ${renderCampaignCalendarHTML(ctx)}
+    </div>
+  `;
+
+  // Navegação de mês (‹ ›)
+  const go = (idx) => {
+    const t = seq[idx];
+    if (!t) return;
+    state.currentRemessa = t.remessaId;
+    state.currentMonth = t.month;
+    renderRemessaView();
+  };
+  const prevB = document.getElementById('calPrevMonth');
+  const nextB = document.getElementById('calNextMonth');
+  if (prevB) prevB.onclick = () => { if (curIdx > 0) go(curIdx - 1); };
+  if (nextB) nextB.onclick = () => { if (curIdx < seq.length - 1) go(curIdx + 1); };
+
+  const todayB = document.getElementById('calTodayBtn');
+  if (todayB) todayB.onclick = () => {
+    const mName = MONTHS_PT[new Date().getMonth()];
+    const found = seq.find(x => x.month === mName);
+    if (found) {
+      state.currentYear = new Date().getFullYear();
+      state.currentRemessa = found.remessaId;
+      state.currentMonth = found.month;
+      renderRemessaView();
+    }
+  };
+
+  // Alterna Calendário / Lista
+  root.querySelectorAll('[data-cv]').forEach(btn => {
+    btn.onclick = () => { state.contentView = btn.dataset.cv; persistContentView(); renderRemessaView(); };
+  });
+
+  // + Adicionar (abre a tela de cadastro atual)
+  const addC = document.getElementById('calAddCampaign');
+  if (addC) addC.onclick = () => openModelModal(null, 'Campanhas');
+  const addV = document.getElementById('calAddVip');
+  if (addV) addV.onclick = () => openModelModal(null, 'Campanhas', { isVipGroup: true });
+
+  // Filtro Geral/Campanhas/VIP do calendário
+  root.querySelectorAll('[data-cal-scope]').forEach(btn => {
+    btn.onclick = (e) => { e.preventDefault(); setCalendarScope(btn.dataset.calScope); renderRemessaView(); };
+  });
+
+  // Clique num dia → lançar conteúdo
+  root.querySelectorAll('[data-cal-date]').forEach(cell => {
+    cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, () => closeModal());
+  });
+}
+
 function renderRemessaView() {
   const root = document.getElementById('viewRoot');
   const r = REMESSAS.find(x => x.id === state.currentRemessa);
   if (!state.currentMonth) state.currentMonth = r.months[0];
+
+  // Visão principal = CALENDÁRIO (estilo RH). "Lista" é a alternativa.
+  if (state.contentView === 'calendar') { renderRemessaCalendar(root, r); return; }
 
   const heroPhotoIds = getHeroPhotoIds(state.currentYear, r.id, 5);
 
@@ -7252,6 +7417,10 @@ function renderRemessaView() {
     <div id="supplierAlertContainer"></div>
 
     <div class="month-actions">
+      <div class="cv-toggle" style="margin-right:auto;">
+        <button class="cv-btn" data-cv="calendar" type="button">📅 Calendário</button>
+        <button class="cv-btn active" data-cv="list" type="button">📋 Lista</button>
+      </div>
       <button class="month-action-btn ${!canUser('copy') ? 'disabled' : ''}" id="copyFromPrevYear" ${!canUser('copy') ? 'disabled' : ''}>
         ↺ Copiar de ${state.currentYear - 1}
       </button>
@@ -7332,6 +7501,11 @@ function renderRemessaView() {
       state.currentMonth = tab.dataset.month;
       renderRemessaView();
     };
+  });
+
+  // Bind Calendário/Lista toggle
+  root.querySelectorAll('[data-cv]').forEach(btn => {
+    btn.onclick = () => { state.contentView = btn.dataset.cv; persistContentView(); renderRemessaView(); };
   });
 
   // Bind status filters
@@ -9485,7 +9659,9 @@ let lancState = { campaignId: null, kind: null };
 
 function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
   const modal = document.getElementById('modalContent');
+  const modalBg = document.getElementById('modalBg');
   if (!modal) return;
+  if (modalBg) modalBg.classList.add('show'); // garante o modal aberto (inclusive vindo da visão inline)
 
   // Campanhas do mês (regulares + Grupo VIP)
   const monthModels = getYearData(ctx.year).models
@@ -12716,9 +12892,13 @@ async function loadViewMode() {
     if (hasStorage) {
       const result = await window.storage.get(VIEW_MODE_KEY, false);
       if (result && result.value) state.viewMode = result.value;
+      const cv = await window.storage.get(CONTENT_VIEW_KEY, false);
+      if (cv && cv.value) state.contentView = cv.value;
     } else {
       const local = localStorage.getItem(VIEW_MODE_KEY);
       if (local) state.viewMode = local;
+      const cv = localStorage.getItem(CONTENT_VIEW_KEY);
+      if (cv) state.contentView = cv;
     }
   } catch (err) { /* default */ }
 }
