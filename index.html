@@ -8533,6 +8533,9 @@ function openModelModal(modelId, defaultCategory, extraDefaults) {
         if (modalState.photoId) await deletePhoto(modalState.photoId);
         modalState.photoId = newId;
         await savePhoto(newId, compressed);
+        showAutosaveStatus('saving');
+        await saveMoodboardImmediate();   // persiste o photoId no modelo (sincroniza)
+        showAutosaveStatus('saved');
         photoDrop.classList.add('has-photo');
         photoDrop.innerHTML = `<img src="${compressed}"><input type="file" id="photoInput" accept="image/*" style="display:none"><div class="photo-replace">Trocar foto</div>`;
         const newInput = document.getElementById('photoInput');
