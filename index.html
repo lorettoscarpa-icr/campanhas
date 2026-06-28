@@ -2995,6 +2995,38 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     margin-right: 2px;
   }
 
+  /* Calendário clicável (lançar conteúdo no dia) */
+  .cal-cell-clickable { cursor: pointer; transition: background 0.15s; }
+  .cal-cell-clickable:hover { background: var(--surface-2); }
+  .cal-cell-add { float: right; opacity: 0; color: var(--gold); font-weight: 700; transition: opacity 0.15s; }
+  .cal-cell-clickable:hover .cal-cell-add { opacity: 1; }
+
+  /* Seletor de tipo (estilo lançamento) */
+  .typepick { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lanc-type-btn {
+    flex: 1; min-width: 90px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 10px; border-radius: 8px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--text-2); font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .lanc-type-btn:hover { border-color: var(--gold-soft); }
+  .lanc-type-btn.sel { font-weight: 700; }
+
+  .lanc-day-list { display: flex; flex-direction: column; gap: 8px; }
+  .lanc-day-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .lanc-day-item-name { font-weight: 600; color: var(--text); font-size: 14px; }
+  .lanc-day-item-meta {
+    color: var(--text-3); font-size: 11px;
+    margin-left: auto; margin-right: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
   .cal-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -6337,8 +6369,11 @@ function startRealtimeSync() {
 
   firestoreUnsubscribe = firebaseDb.collection(FIRESTORE_COLLECTION)
     .onSnapshot((snapshot) => {
-      // Don't disrupt user if they're editing in a modal
+      // Se o usuário está editando (modal aberto), NÃO sobrescreve os dados.
+      // Isso evita apagar uma foto/campo recém-adicionado por causa de um eco
+      // do servidor chegando no meio da edição.
       const modalOpen = document.getElementById('modalBg')?.classList.contains('show');
+      if (modalOpen) return;
 
       let changed = false;
       snapshot.docChanges().forEach(change => {
@@ -6355,7 +6390,7 @@ function startRealtimeSync() {
         }
       });
 
-      if (changed && !modalOpen) {
+      if (changed) {
         // Re-render to show updates
         if (state.view === 'year') renderYearView();
         else if (state.view === 'remessa') renderRemessaView();
@@ -8160,9 +8195,10 @@ function renderCampaignCalendarHTML(ctx) {
     const periodsToday = (campaignPeriods || []).filter(p => d >= p.startDay && d <= p.endDay);
     const today = new Date();
     const isToday = today.getFullYear() === yearN && today.getMonth() === monthIdx && today.getDate() === d;
+    const cellDate = `${yearN}-${String(monthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     cells.push(`
-      <div class="cal-cell ${isToday ? 'cal-cell-today' : ''} ${(items.length > 0 || periodsToday.length > 0) ? 'cal-cell-has-items' : ''}">
-        <div class="cal-cell-day">${d}</div>
+      <div class="cal-cell cal-cell-clickable ${isToday ? 'cal-cell-today' : ''} ${(items.length > 0 || periodsToday.length > 0) ? 'cal-cell-has-items' : ''}" data-cal-date="${cellDate}" title="Clique pra lançar conteúdo nesse dia">
+        <div class="cal-cell-day">${d}<span class="cal-cell-add">＋</span></div>
         ${periodsToday.length > 0 ? `
           <div class="cal-cell-periods">
             ${periodsToday.map(p => {
@@ -9402,9 +9438,12 @@ function openMonthCalendar() {
       <div class="modal-header">
         <div>
           <div class="modal-title">📅 Calendário do <em>mês</em></div>
-          <div class="modal-sub">${ctx.month} ${ctx.year} · todas as campanhas + Grupo VIP</div>
+          <div class="modal-sub">${ctx.month} ${ctx.year} · clique num dia pra lançar conteúdo</div>
         </div>
-        <button class="modal-close" id="calStandaloneClose" type="button">×</button>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="content-add-btn" id="calLancarBtn" type="button" style="margin:0;">＋ Lançar conteúdo</button>
+          <button class="modal-close" id="calStandaloneClose" type="button">×</button>
+        </div>
       </div>
       <div class="modal-body">
         ${renderCampaignCalendarHTML(ctx)}
@@ -9418,10 +9457,218 @@ function openMonthCalendar() {
         render();
       };
     });
+    // Clique num dia → lançar conteúdo naquele dia
+    modal.querySelectorAll('[data-cal-date]').forEach(cell => {
+      cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, render);
+    });
+    // Botão geral de lançar (usa o dia de hoje, ou o 1º do mês se hoje não for desse mês)
+    const lancBtn = modal.querySelector('#calLancarBtn');
+    if (lancBtn) lancBtn.onclick = () => {
+      const monthIdx = MONTHS_PT.indexOf(ctx.month);
+      const today = new Date();
+      const useToday = today.getFullYear() === ctx.year && today.getMonth() === monthIdx;
+      const day = useToday ? today.getDate() : 1;
+      const dISO = `${ctx.year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      openLancamentoConteudo(dISO, ctx, render);
+    };
   };
 
   render();
   modalBg.classList.add('show');
+}
+
+// ============================================================
+// LANÇAR CONTEÚDO PELO CALENDÁRIO (estilo agendamento do RH)
+// Clica no dia → escolhe campanha + tipo (por cor) + nome → entra naquele dia.
+// ============================================================
+let lancState = { campaignId: null, kind: null };
+
+function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
+  const modal = document.getElementById('modalContent');
+  if (!modal) return;
+
+  // Campanhas do mês (regulares + Grupo VIP)
+  const monthModels = getYearData(ctx.year).models
+    .filter(m => m.remessaId === ctx.remessaId && m.month === ctx.month)
+    .map(migrateModel);
+  const regulars = monthModels.filter(m => !m.isVipGroup);
+  const vipGroup = monthModels.find(m => m.isVipGroup);
+
+  // Tipos por campanha
+  const typesRegular = [
+    { kind: 'stories',   label: 'Stories',   color: CONTENT_COLORS.story },
+    { kind: 'reels',     label: 'Reels',     color: CONTENT_COLORS.reel },
+    { kind: 'carrossel', label: 'Carrossel', color: CONTENT_COLORS.carrossel }
+  ];
+  const typesVip = [
+    { kind: 'videos', label: 'Vídeo',   color: CONTENT_COLORS.vip },
+    { kind: 'photos', label: 'Foto',    color: CONTENT_COLORS.vip },
+    { kind: 'polls',  label: 'Enquete', color: CONTENT_COLORS.vip }
+  ];
+
+  // Estado inicial: primeira campanha disponível
+  const firstCampaign = regulars[0] || vipGroup || null;
+  lancState = { campaignId: firstCampaign ? firstCampaign.id : null, kind: null };
+
+  const prefixMap = { stories: 's', reels: 'r', carrossel: 'c', videos: 'v', photos: 'p', polls: 'q' };
+
+  const dataBR = (() => {
+    const [y, mo, d] = dateISO.split('-');
+    return `${d}/${mo}/${y}`;
+  })();
+
+  // Itens já lançados nesse dia (todas as campanhas)
+  const itemsNoDia = [];
+  monthModels.forEach(m => {
+    const arrs = m.isVipGroup
+      ? [['videos','Vídeo'],['photos','Foto'],['polls','Enquete']]
+      : [['stories','Stories'],['reels','Reels'],['carrossel','Carrossel']];
+    arrs.forEach(([field, label]) => {
+      (m[field] || []).forEach(it => {
+        if (it.publishDate === dateISO) {
+          itemsNoDia.push({ ...it, field, label, campaignId: m.id, campaignName: m.name, isVip: !!m.isVipGroup });
+        }
+      });
+    });
+  });
+
+  const renderForm = () => {
+    const selected = monthModels.find(m => m.id === lancState.campaignId);
+    const types = (selected && selected.isVipGroup) ? typesVip : typesRegular;
+    if (lancState.kind && !types.some(t => t.kind === lancState.kind)) lancState.kind = null;
+
+    modal.innerHTML = `
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">＋ Lançar <em>conteúdo</em></div>
+          <div class="modal-sub">${dataBR} · ${ctx.month} ${ctx.year}</div>
+        </div>
+        <button class="modal-close" id="lancClose" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        ${itemsNoDia.length > 0 ? `
+          <div class="form-section">
+            <div class="form-section-label">Já lançado nesse dia</div>
+            <div class="lanc-day-list">
+              ${itemsNoDia.map(it => `
+                <div class="lanc-day-item">
+                  <span class="cal-cell-dot" style="background:${contentColor(it.field === 'videos' || it.field === 'photos' || it.field === 'polls' ? 'video' : (it.field === 'stories' ? 'story' : it.field === 'reels' ? 'reel' : 'carrossel'), it.isVip)}"></span>
+                  <span class="lanc-day-item-name">${escapeHtml(it.name || it.label)}</span>
+                  <span class="lanc-day-item-meta">${it.label}${it.isVip ? ' · VIP' : ''} · ${escapeHtml(it.campaignName)}</span>
+                  <button class="content-item-remove" data-del-id="${it.id}" data-del-field="${it.field}" data-del-campaign="${it.campaignId}" title="Remover">×</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${monthModels.length === 0 ? `
+          <div class="form-section">
+            <p style="color:var(--text-2);font-size:14px;line-height:1.5;">
+              Ainda não há campanhas em ${ctx.month}. Crie uma campanha (ou o Grupo VIP) primeiro pra poder lançar conteúdo no calendário.
+            </p>
+            <button class="content-add-btn" id="lancCreateCampaign" type="button">+ Criar campanha</button>
+          </div>
+        ` : `
+          <div class="form-section">
+            <div class="form-section-label">Lançar novo conteúdo</div>
+
+            <div class="field">
+              <label>Campanha</label>
+              <select id="lancCampaign">
+                ${regulars.map(m => `<option value="${m.id}" ${lancState.campaignId === m.id ? 'selected' : ''}>${escapeHtml(m.name)}</option>`).join('')}
+                ${vipGroup ? `<option value="${vipGroup.id}" ${lancState.campaignId === vipGroup.id ? 'selected' : ''}>💎 ${escapeHtml(vipGroup.name)}</option>` : ''}
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Tipo de conteúdo</label>
+              <div class="typepick">
+                ${types.map(t => `
+                  <button type="button" class="lanc-type-btn ${lancState.kind === t.kind ? 'sel' : ''}" data-lanc-kind="${t.kind}"
+                          style="${lancState.kind === t.kind ? `border-color:${t.color};background:${t.color}1f;color:${t.color};` : ''}">
+                    <span class="cal-cell-dot" style="background:${t.color}"></span> ${t.label}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Nome do conteúdo <span style="color:var(--text-3);font-weight:400;">(opcional)</span></label>
+              <input type="text" id="lancName" placeholder="Ex: Reels making of, Carrossel looks...">
+            </div>
+
+            <div class="field">
+              <label>Data de publicação</label>
+              <input type="date" id="lancDate" value="${dateISO}">
+            </div>
+
+            <button class="content-add-btn" id="lancSave" type="button" style="margin-top:6px;">✓ Lançar no calendário</button>
+          </div>
+        `}
+
+        <button class="add-btn add-btn-cal" id="lancBack" type="button" style="width:100%;margin-top:8px;">← Voltar pro calendário</button>
+      </div>
+    `;
+
+    // Binds
+    const close = () => { if (backToCalendar) backToCalendar(); };
+    modal.querySelector('#lancClose').onclick = close;
+    modal.querySelector('#lancBack').onclick = close;
+
+    const createBtn = modal.querySelector('#lancCreateCampaign');
+    if (createBtn) createBtn.onclick = () => { modal.classList.remove('modal-fullscreen'); closeModal(); openModelModal(null, 'Campanhas'); };
+
+    const campSel = modal.querySelector('#lancCampaign');
+    if (campSel) campSel.onchange = () => { lancState.campaignId = campSel.value; lancState.kind = null; renderForm(); };
+
+    modal.querySelectorAll('[data-lanc-kind]').forEach(btn => {
+      btn.onclick = () => { lancState.kind = btn.dataset.lancKind; renderForm(); };
+    });
+
+    // Remover item já lançado
+    modal.querySelectorAll('[data-del-id]').forEach(btn => {
+      btn.onclick = async () => {
+        const m = monthModels.find(x => x.id === btn.dataset.delCampaign);
+        if (!m) return;
+        const field = btn.dataset.delField;
+        m[field] = (m[field] || []).filter(x => x.id !== btn.dataset.delId);
+        if (!m.isVipGroup) { m.videosCount = (m.reels || []).length; m.photosCount = (m.carrossel || []).length; }
+        showAutosaveStatus('saving');
+        await upsertModel(ctx.year, m);
+        showAutosaveStatus('saved');
+        showToast('Conteúdo removido');
+        if (backToCalendar) backToCalendar();
+      };
+    });
+
+    const saveBtn = modal.querySelector('#lancSave');
+    if (saveBtn) saveBtn.onclick = async () => {
+      if (!lancState.campaignId) { showToast('Escolha uma campanha'); return; }
+      if (!lancState.kind) { showToast('Escolha o tipo de conteúdo'); return; }
+      const m = monthModels.find(x => x.id === lancState.campaignId);
+      if (!m) { showToast('Campanha não encontrada'); return; }
+      const kind = lancState.kind;
+      const name = (modal.querySelector('#lancName').value || '').trim();
+      const pubDate = modal.querySelector('#lancDate').value || dateISO;
+      if (!Array.isArray(m[kind])) m[kind] = [];
+      m[kind].push({
+        id: (prefixMap[kind] || 'i') + '_' + createModelId(),
+        name,
+        recorded: false, edited: false, posted: false,
+        publishDate: pubDate,
+        linkedCampaignId: m.isVipGroup ? null : null
+      });
+      if (!m.isVipGroup) { m.videosCount = (m.reels || []).length; m.photosCount = (m.carrossel || []).length; }
+      showAutosaveStatus('saving');
+      await upsertModel(ctx.year, m);
+      showAutosaveStatus('saved');
+      showToast('Conteúdo lançado no calendário ✓');
+      if (backToCalendar) backToCalendar();
+    };
+  };
+
+  renderForm();
 }
 
 // ============================================================
