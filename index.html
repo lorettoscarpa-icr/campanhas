@@ -7295,6 +7295,41 @@ function getMonthSequence() {
 // ============================================================
 // VISÃO PRINCIPAL = CALENDÁRIO (estilo RH: navega mês, Hoje, + Adicionar)
 // ============================================================
+// Dropdown de exportar reutilizável (Lista e Calendário) — só Plano do Mês + Calendário Geral
+function exportDropdownHTML() {
+  return `
+    <div class="export-dropdown" id="exportDropdown">
+      <button class="month-action-btn export-trigger" id="exportTriggerBtn">⬇ Exportar <span class="export-arrow">▾</span></button>
+      <div class="export-menu" id="exportMenu">
+        <button class="export-menu-item" data-export="pdf-plan">
+          <span class="export-menu-icon">📋</span>
+          <span class="export-menu-label">Plano do Mês <em>(por campanha · pra equipe imprimir)</em></span>
+        </button>
+        <div class="export-menu-divider"></div>
+        <button class="export-menu-item" data-export="pdf-all">
+          <span class="export-menu-icon">📅</span>
+          <span class="export-menu-label">Calendário Geral <em>(campanhas + Grupo VIP)</em></span>
+        </button>
+      </div>
+    </div>`;
+}
+
+function bindExportDropdown() {
+  const exportTrigger = document.getElementById('exportTriggerBtn');
+  const exportDropdown = document.getElementById('exportDropdown');
+  const exportMenu = document.getElementById('exportMenu');
+  if (!exportTrigger || !exportDropdown || !exportMenu) return;
+  exportTrigger.onclick = (e) => { e.stopPropagation(); exportDropdown.classList.toggle('open'); };
+  document.addEventListener('click', (e) => { if (!exportDropdown.contains(e.target)) exportDropdown.classList.remove('open'); });
+  exportMenu.querySelectorAll('[data-export]').forEach(btn => {
+    btn.onclick = () => {
+      exportDropdown.classList.remove('open');
+      if (btn.dataset.export === 'pdf-plan') handleExportPlanoMesPDF();
+      else if (btn.dataset.export === 'pdf-all') handleExportCalendarPDF('all');
+    };
+  });
+}
+
 function renderRemessaCalendar(root, r) {
   const ctx = { year: state.currentYear, remessaId: state.currentRemessa, month: state.currentMonth };
   const seq = getMonthSequence();
@@ -7322,6 +7357,7 @@ function renderRemessaCalendar(root, r) {
           <button class="cv-btn active" data-cv="calendar" type="button">📅 Calendário</button>
           <button class="cv-btn" data-cv="list" type="button">📋 Lista</button>
         </div>
+        ${exportDropdownHTML()}
         ${canUser('create') ? `
           <button class="cal-add-btn" id="calAddCampaign" type="button">＋ Campanha</button>
           <button class="cal-add-btn cal-add-vip" id="calAddVip" type="button">💎 Grupo VIP</button>
@@ -7369,6 +7405,9 @@ function renderRemessaCalendar(root, r) {
   if (addC) addC.onclick = () => openModelModal(null, 'Campanhas');
   const addV = document.getElementById('calAddVip');
   if (addV) addV.onclick = () => openModelModal(null, 'Campanhas', { isVipGroup: true });
+
+  // Imprimir / Exportar (Plano do Mês ou Calendário Geral)
+  bindExportDropdown();
 
   // Filtro Geral/Campanhas/VIP do calendário
   root.querySelectorAll('[data-cal-scope]').forEach(btn => {
@@ -7438,7 +7477,6 @@ function renderRemessaView() {
       }).join('')}
     </div>
 
-    <div id="monthTotalsBar"></div>
     <div id="monthDeadlineBar"></div>
     <div id="comparePanel"></div>
     <div id="supplierAlertContainer"></div>
@@ -7451,40 +7489,7 @@ function renderRemessaView() {
       <button class="month-action-btn ${!canUser('copy') ? 'disabled' : ''}" id="copyFromPrevYear" ${!canUser('copy') ? 'disabled' : ''}>
         ↺ Copiar de ${state.currentYear - 1}
       </button>
-      <button class="month-action-btn month-action-ai ${!canUser('create') ? 'disabled' : ''}" id="importFromBoardBtn" ${!canUser('create') ? 'disabled' : ''}>
-        📸 Importar do quadro
-      </button>
-      <div class="export-dropdown" id="exportDropdown">
-        <button class="month-action-btn export-trigger" id="exportTriggerBtn">
-          ⬇ Exportar <span class="export-arrow">▾</span>
-        </button>
-        <div class="export-menu" id="exportMenu">
-          <button class="export-menu-item" data-export="excel">
-            <span class="export-menu-icon">⬇</span>
-            <span class="export-menu-label">Excel <em>(.xls · todas as campanhas)</em></span>
-          </button>
-          <div class="export-menu-divider"></div>
-          <button class="export-menu-item" data-export="pdf-plan">
-            <span class="export-menu-icon">📋</span>
-            <span class="export-menu-label">Plano do Mês <em>(por campanha · pra equipe imprimir)</em></span>
-          </button>
-          <div class="export-menu-divider"></div>
-          <button class="export-menu-item" data-export="pdf-all">
-            <span class="export-menu-icon">📅</span>
-            <span class="export-menu-label">Calendário Geral <em>(campanhas + VIP)</em></span>
-          </button>
-          <button class="export-menu-item" data-export="pdf-campanhas">
-            <span class="export-menu-icon">🎯</span>
-            <span class="export-menu-label">Calendário Campanhas <em>(só Instagram)</em></span>
-          </button>
-          <button class="export-menu-item" data-export="pdf-vip">
-            <span class="export-menu-icon">💎</span>
-            <span class="export-menu-label">Calendário Grupo VIP <em>(só WhatsApp)</em></span>
-          </button>
-        </div>
-        <!-- Hidden alias buttons for programmatic access (kept for compatibility) -->
-        <button id="exportExcelBtn" class="export-alias" aria-hidden="true" tabindex="-1"></button>
-      </div>
+      ${exportDropdownHTML()}
       <div class="view-mode-toggle">
         <button class="view-mode-btn ${state.viewMode === 'grid' ? 'active' : ''}" data-mode="grid">Grid</button>
         <button class="view-mode-btn ${state.viewMode === 'lookbook' ? 'active' : ''}" data-mode="lookbook">Lookbook</button>
@@ -7492,13 +7497,6 @@ function renderRemessaView() {
     </div>
 
     <div class="toolbar toolbar-slim">
-      <div class="filter-group" id="statusFilters">
-        <span class="filter-group-label">Status:</span>
-        <button class="filter-pill ${!state.filterStatus ? 'active' : ''}" data-status="">Todos</button>
-        ${STATUSES.map(s => `
-          <button class="filter-pill ${state.filterStatus === s.id ? 'active' : ''}" data-status="${s.id}">${s.label}</button>
-        `).join('')}
-      </div>
       <input class="search-input" id="searchInput" placeholder="Buscar campanha..." value="${state.searchQuery}">
     </div>
 
@@ -7569,38 +7567,8 @@ function renderRemessaView() {
     copyBtn.onclick = handleCopyFromPrevYear;
   }
 
-  // Bind "Importar do quadro" (foto + IA Anthropic Vision)
-  const importBoardBtn = document.getElementById('importFromBoardBtn');
-  if (importBoardBtn && canUser('create')) {
-    importBoardBtn.onclick = openImportFromBoardModal;
-  }
-
-  // Export dropdown — single trigger that opens menu with all export options
-  const exportTrigger = document.getElementById('exportTriggerBtn');
-  const exportDropdown = document.getElementById('exportDropdown');
-  const exportMenu = document.getElementById('exportMenu');
-  if (exportTrigger && exportDropdown && exportMenu) {
-    exportTrigger.onclick = (e) => {
-      e.stopPropagation();
-      exportDropdown.classList.toggle('open');
-    };
-    // Click outside closes
-    document.addEventListener('click', (e) => {
-      if (!exportDropdown.contains(e.target)) exportDropdown.classList.remove('open');
-    });
-    // Each menu item dispatches the right action
-    exportMenu.querySelectorAll('[data-export]').forEach(btn => {
-      btn.onclick = () => {
-        exportDropdown.classList.remove('open');
-        const action = btn.dataset.export;
-        if (action === 'excel') handleExportCSV();
-        else if (action === 'pdf-plan') handleExportPlanoMesPDF();
-        else if (action === 'pdf-all') handleExportCalendarPDF('all');
-        else if (action === 'pdf-campanhas') handleExportCalendarPDF('campanhas');
-        else if (action === 'pdf-vip') handleExportCalendarPDF('vip');
-      };
-    });
-  }
+  // Export dropdown (Plano do Mês / Calendário Geral)
+  bindExportDropdown();
   // Hidden alias buttons for programmatic access (e.g., from tests or scripts)
   const aliasBindings = [
     ['exportExcelBtn', handleExportCSV]
