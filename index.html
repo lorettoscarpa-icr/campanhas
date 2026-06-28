@@ -3026,6 +3026,24 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     margin-left: auto; margin-right: 6px;
     font-family: 'DM Mono', monospace;
   }
+  .lanc-day-edit-btn {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 13px; padding: 2px 4px; border-radius: 4px; opacity: 0.75;
+  }
+  .lanc-day-edit-btn:hover { opacity: 1; background: var(--surface-2); }
+  .lanc-has-notes { font-size: 10px; margin-left: 3px; }
+  .lanc-day-edit {
+    padding: 12px; background: var(--surface);
+    border: 1px solid var(--gold-soft); border-radius: 8px;
+  }
+  .lanc-day-edit-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px; font-size: 13px; color: var(--text);
+  }
+  .lanc-day-edit-head .lanc-day-item-meta { margin-left: auto; margin-right: 0; }
+  .lanc-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .lanc-edit-actions .content-add-btn,
+  .lanc-edit-actions .add-btn { margin: 0; flex: 1; }
 
   /* ===== Barra principal do calendário (estilo RH) ===== */
   .cal-main-bar {
@@ -3086,7 +3104,7 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 
   .cal-header {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
@@ -3106,11 +3124,12 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
 
   .cal-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .cal-cell {
     min-height: 80px;
+    min-width: 0;
     padding: 6px;
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -3149,6 +3168,7 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     display: flex;
     flex-direction: column;
     gap: 3px;
+    min-width: 0;
   }
 
   .cal-cell-item {
@@ -3163,6 +3183,11 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
     align-items: center;
     gap: 5px;
     overflow: hidden;
+    min-width: 0;
+  }
+  .cal-cell-name {
+    min-width: 0;
+    flex: 1 1 auto;
   }
   .cal-cell-dot {
     width: 7px; height: 7px;
@@ -3283,7 +3308,8 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
   @media (max-width: 720px) {
     .cal-cell { min-height: 60px; padding: 4px; }
     .cal-cell-day { font-size: 11px; }
-    .cal-cell-name { display: none; } /* só mostra ícones em mobile */
+    .cal-cell-name { font-size: 8px; } /* mostra tipo + nome, bem pequeno */
+    .cal-cell-item { padding: 2px 4px; gap: 3px; }
   }
   /* ============== CAMPAIGN PERIOD BANDS (faixas coloridas no calendário) ============== */
   .cal-cell-periods {
@@ -6747,6 +6773,7 @@ function migrateModel(m) {
   const _sanitizeItem = (prefix) => (it) => ({
     id: it.id || (prefix + '_' + Math.random().toString(36).slice(2, 8)),
     name: it.name || '',
+    notes: it.notes || '',
     recorded: !!it.recorded,
     edited: !!it.edited,
     posted: !!it.posted,
@@ -8344,7 +8371,7 @@ function contentColor(kind, isVip) {
 }
 function contentTypeLabel(kind, isVip) {
   if (isVip) return 'VIP';
-  return { story: 'Stories', reel: 'Reel', carrossel: 'Carrossel',
+  return { story: 'Stories', reel: 'Reels', carrossel: 'Carrossel',
            video: 'Vídeo', photo: 'Foto', poll: 'Enquete' }[kind] || 'Item';
 }
 
@@ -8381,7 +8408,7 @@ function renderCampaignCalendarHTML(ctx) {
               return `<div class="cal-cell-period ${isStart ? 'period-start' : ''} ${isEnd ? 'period-end' : ''}"
                        style="background: ${p.color};"
                        title="${escapeHtml(p.name)} · ${p.startDay} → ${p.endDay}">
-                ${isStart ? `<span class="cal-cell-period-name">${escapeHtml(p.name)}</span>` : ''}
+                <span class="cal-cell-period-name">${escapeHtml(p.name)}</span>
               </div>`;
             }).join('')}
           </div>
@@ -8394,7 +8421,7 @@ function renderCampaignCalendarHTML(ctx) {
             return `
               <div class="cal-cell-item ${it.posted ? 'posted' : ''}" title="${escapeHtml(itemTitle)}" style="border-left-color:${color}; background:${color}1f;">
                 <span class="cal-cell-dot" style="background:${color}"></span>
-                <span class="cal-cell-name">${escapeHtml(it.name || kindLabel)}</span>
+                <span class="cal-cell-name"><strong class="cal-cell-kind" style="color:${color}">${kindLabel}</strong>${it.name ? ' · ' + escapeHtml(it.name) : ''}</span>
               </div>
             `;
           }).join('')}
@@ -9693,25 +9720,32 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
     return `${d}/${mo}/${y}`;
   })();
 
-  // Itens já lançados nesse dia (todas as campanhas)
-  const itemsNoDia = [];
-  monthModels.forEach(m => {
-    const arrs = m.isVipGroup
-      ? [['videos','Vídeo'],['photos','Foto'],['polls','Enquete']]
-      : [['stories','Stories'],['reels','Reels'],['carrossel','Carrossel']];
-    arrs.forEach(([field, label]) => {
-      (m[field] || []).forEach(it => {
-        if (it.publishDate === dateISO) {
-          itemsNoDia.push({ ...it, field, label, campaignId: m.id, campaignName: m.name, isVip: !!m.isVipGroup });
-        }
+  // Estado de edição de um item já lançado
+  lancState.editId = null;
+
+  const computeItemsNoDia = () => {
+    const out = [];
+    monthModels.forEach(m => {
+      const arrs = m.isVipGroup
+        ? [['videos','Vídeo'],['photos','Foto'],['polls','Enquete']]
+        : [['stories','Stories'],['reels','Reels'],['carrossel','Carrossel']];
+      arrs.forEach(([field, label]) => {
+        (m[field] || []).forEach(it => {
+          if (it.publishDate === dateISO) {
+            out.push({ ...it, field, label, campaignId: m.id, campaignName: m.name, isVip: !!m.isVipGroup });
+          }
+        });
       });
     });
-  });
+    return out;
+  };
 
   const renderForm = () => {
     const selected = monthModels.find(m => m.id === lancState.campaignId);
     const types = (selected && selected.isVipGroup) ? typesVip : typesRegular;
     if (lancState.kind && !types.some(t => t.kind === lancState.kind)) lancState.kind = null;
+    const itemsNoDia = computeItemsNoDia();
+    const dotKind = (field) => (field === 'videos' || field === 'photos' || field === 'polls') ? 'video' : (field === 'stories' ? 'story' : field === 'reels' ? 'reel' : 'carrossel');
 
     modal.innerHTML = `
       <div class="modal-header">
@@ -9726,11 +9760,30 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
           <div class="form-section">
             <div class="form-section-label">Já lançado nesse dia</div>
             <div class="lanc-day-list">
-              ${itemsNoDia.map(it => `
+              ${itemsNoDia.map(it => lancState.editId === it.id ? `
+                <div class="lanc-day-edit">
+                  <div class="lanc-day-edit-head">
+                    <span class="cal-cell-dot" style="background:${contentColor(dotKind(it.field), it.isVip)}"></span>
+                    <strong>${it.label}${it.isVip ? ' · VIP' : ''}</strong>
+                    <span class="lanc-day-item-meta">${escapeHtml(it.campaignName)}</span>
+                  </div>
+                  <div class="field"><label>Nome do conteúdo</label>
+                    <input type="text" id="editName" value="${escapeHtml(it.name || '')}" placeholder="Ex: Vídeo principal da campanha">
+                  </div>
+                  <div class="field"><label>Detalhar conteúdo <span style="color:var(--text-3);font-weight:400;">(só pra você — não aparece no calendário)</span></label>
+                    <textarea id="editNotes" rows="4" placeholder="Ex: Vídeo do pai falando sobre X, estética tal, 45s, fala...">${escapeHtml(it.notes || '')}</textarea>
+                  </div>
+                  <div class="lanc-edit-actions">
+                    <button class="content-add-btn" id="editSave" data-eid="${it.id}" data-efield="${it.field}" data-ecamp="${it.campaignId}" type="button">✓ Salvar</button>
+                    <button class="add-btn" id="editCancel" type="button">Cancelar</button>
+                  </div>
+                </div>
+              ` : `
                 <div class="lanc-day-item">
-                  <span class="cal-cell-dot" style="background:${contentColor(it.field === 'videos' || it.field === 'photos' || it.field === 'polls' ? 'video' : (it.field === 'stories' ? 'story' : it.field === 'reels' ? 'reel' : 'carrossel'), it.isVip)}"></span>
-                  <span class="lanc-day-item-name">${escapeHtml(it.name || it.label)}</span>
-                  <span class="lanc-day-item-meta">${it.label}${it.isVip ? ' · VIP' : ''} · ${escapeHtml(it.campaignName)}</span>
+                  <span class="cal-cell-dot" style="background:${contentColor(dotKind(it.field), it.isVip)}"></span>
+                  <span class="lanc-day-item-name">${it.label}${it.name ? ' · ' + escapeHtml(it.name) : ''}${it.notes ? ' <span class="lanc-has-notes" title="Tem detalhes">📝</span>' : ''}</span>
+                  <span class="lanc-day-item-meta">${escapeHtml(it.campaignName)}</span>
+                  <button class="lanc-day-edit-btn" data-edit-id="${it.id}" title="Detalhar / editar">✏️</button>
                   <button class="content-item-remove" data-del-id="${it.id}" data-del-field="${it.field}" data-del-campaign="${it.campaignId}" title="Remover">×</button>
                 </div>
               `).join('')}
@@ -9771,7 +9824,12 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
 
             <div class="field">
               <label>Nome do conteúdo <span style="color:var(--text-3);font-weight:400;">(opcional)</span></label>
-              <input type="text" id="lancName" placeholder="Ex: Reels making of, Carrossel looks...">
+              <input type="text" id="lancName" placeholder="Ex: Vídeo principal da campanha">
+            </div>
+
+            <div class="field">
+              <label>Detalhar conteúdo <span style="color:var(--text-3);font-weight:400;">(só pra você — não aparece no calendário)</span></label>
+              <textarea id="lancNotes" rows="4" placeholder="Ex: Vídeo do pai falando sobre X, estética tal, 45s, fala tal tal tal..."></textarea>
             </div>
 
             <div class="field">
@@ -9814,9 +9872,33 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
         await upsertModel(ctx.year, m);
         showAutosaveStatus('saved');
         showToast('Conteúdo removido');
-        if (backToCalendar) backToCalendar();
+        lancState.editId = null;
+        renderForm();
       };
     });
+
+    // Abrir edição / detalhamento de um item já lançado
+    modal.querySelectorAll('[data-edit-id]').forEach(btn => {
+      btn.onclick = () => { lancState.editId = btn.dataset.editId; renderForm(); };
+    });
+    const editCancel = modal.querySelector('#editCancel');
+    if (editCancel) editCancel.onclick = () => { lancState.editId = null; renderForm(); };
+    const editSave = modal.querySelector('#editSave');
+    if (editSave) editSave.onclick = async () => {
+      const m = monthModels.find(x => x.id === editSave.dataset.ecamp);
+      if (!m) return;
+      const field = editSave.dataset.efield;
+      const item = (m[field] || []).find(x => x.id === editSave.dataset.eid);
+      if (!item) return;
+      item.name = (modal.querySelector('#editName').value || '').trim();
+      item.notes = (modal.querySelector('#editNotes').value || '').trim();
+      showAutosaveStatus('saving');
+      await upsertModel(ctx.year, m);
+      showAutosaveStatus('saved');
+      showToast('Conteúdo detalhado ✓');
+      lancState.editId = null;
+      renderForm();
+    };
 
     const saveBtn = modal.querySelector('#lancSave');
     if (saveBtn) saveBtn.onclick = async () => {
@@ -9826,14 +9908,16 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
       if (!m) { showToast('Campanha não encontrada'); return; }
       const kind = lancState.kind;
       const name = (modal.querySelector('#lancName').value || '').trim();
+      const notes = (modal.querySelector('#lancNotes').value || '').trim();
       const pubDate = modal.querySelector('#lancDate').value || dateISO;
       if (!Array.isArray(m[kind])) m[kind] = [];
       m[kind].push({
         id: (prefixMap[kind] || 'i') + '_' + createModelId(),
         name,
+        notes,
         recorded: false, edited: false, posted: false,
         publishDate: pubDate,
-        linkedCampaignId: m.isVipGroup ? null : null
+        linkedCampaignId: null
       });
       if (!m.isVipGroup) { m.videosCount = (m.reels || []).length; m.photosCount = (m.carrossel || []).length; }
       showAutosaveStatus('saving');
@@ -11018,7 +11102,7 @@ async function handleExportCalendarPDF(scope) {
               const isStart = d === p.startDay;
               const isEnd = d === p.endDay;
               return `<div class="pdf-cal-period ${isStart ? 'period-start' : ''} ${isEnd ? 'period-end' : ''}" style="background: ${p.color};">
-                ${isStart ? `<span class="pdf-cal-period-name">${escapeHtml(p.name)}</span>` : ''}
+                <span class="pdf-cal-period-name">${escapeHtml(p.name)}</span>
               </div>`;
             }).join('')}
           </div>
@@ -11030,7 +11114,7 @@ async function handleExportCalendarPDF(scope) {
             return `
               <div class="pdf-cal-item ${it.posted ? 'posted' : ''}" style="border-left-color:${color}; background:${color}1f;">
                 <span class="pdf-cal-item-dot" style="background:${color}"></span>
-                <span class="pdf-cal-item-name">${escapeHtml(it.name || kindLabel)}</span>
+                <span class="pdf-cal-item-name"><strong>${kindLabel}</strong>${it.name ? ' · ' + escapeHtml(it.name) : ''}</span>
                 <span class="pdf-cal-item-camp">${escapeHtml(it.campaignName)}</span>
                 ${it.posted ? '<span class="pdf-cal-item-check">✓</span>' : ''}
               </div>
