@@ -3042,6 +3042,24 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
   }
   .lanc-day-edit-head .lanc-day-item-meta { margin-left: auto; margin-right: 0; }
   .lanc-edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .lanc-day-item-wrap { display: flex; flex-direction: column; }
+  .lanc-day-item-wrap .lanc-day-item { border-radius: 6px 6px 0 0; border-bottom: none; }
+  .lanc-day-checks {
+    display: flex; gap: 6px; padding: 6px 10px 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 1px dashed var(--border); border-radius: 0 0 6px 6px;
+  }
+  .lanc-check {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; font-weight: 600; padding: 6px 6px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 5px;
+    background: transparent; color: var(--text-3);
+    font-family: 'Barlow', sans-serif; transition: all .12s ease;
+  }
+  .lanc-check:hover { border-color: var(--gold-soft); color: var(--text-2); }
+  .lanc-check.on { background: var(--gold); border-color: var(--gold); color: #1c1c14; }
+  .lanc-check.on.check-posted { background: var(--status-rec); border-color: var(--status-rec); color: #fff; }
+  .lanc-edit-date { margin-top: 2px; }
   .lanc-edit-actions .content-add-btn,
   .lanc-edit-actions .add-btn { margin: 0; flex: 1; }
 
@@ -7416,7 +7434,7 @@ function renderRemessaCalendar(root, r) {
 
   // Clique num dia → lançar conteúdo
   root.querySelectorAll('[data-cal-date]').forEach(cell => {
-    cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, () => closeModal());
+    cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, () => { closeModal(); renderRemessaView(); });
   });
 }
 
@@ -9741,18 +9759,28 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
                   <div class="field"><label>Detalhar conteúdo <span style="color:var(--text-3);font-weight:400;">(só pra você — não aparece no calendário)</span></label>
                     <textarea id="editNotes" rows="4" placeholder="Ex: Vídeo do pai falando sobre X, estética tal, 45s, fala...">${escapeHtml(it.notes || '')}</textarea>
                   </div>
+                  <div class="field lanc-edit-date"><label>Mover para outro dia</label>
+                    <input type="date" id="editDate" value="${it.publishDate || dateISO}">
+                  </div>
                   <div class="lanc-edit-actions">
                     <button class="content-add-btn" id="editSave" data-eid="${it.id}" data-efield="${it.field}" data-ecamp="${it.campaignId}" type="button">✓ Salvar</button>
                     <button class="add-btn" id="editCancel" type="button">Cancelar</button>
                   </div>
                 </div>
               ` : `
-                <div class="lanc-day-item">
-                  <span class="cal-cell-dot" style="background:${contentColor(dotKind(it.field), it.isVip)}"></span>
-                  <span class="lanc-day-item-name">${it.label}${it.name ? ' · ' + escapeHtml(it.name) : ''}${it.notes ? ' <span class="lanc-has-notes" title="Tem detalhes">📝</span>' : ''}</span>
-                  <span class="lanc-day-item-meta">${escapeHtml(it.campaignName)}</span>
-                  <button class="lanc-day-edit-btn" data-edit-id="${it.id}" title="Detalhar / editar">✏️</button>
-                  <button class="content-item-remove" data-del-id="${it.id}" data-del-field="${it.field}" data-del-campaign="${it.campaignId}" title="Remover">×</button>
+                <div class="lanc-day-item-wrap">
+                  <div class="lanc-day-item">
+                    <span class="cal-cell-dot" style="background:${contentColor(dotKind(it.field), it.isVip)}"></span>
+                    <span class="lanc-day-item-name">${it.label}${it.name ? ' · ' + escapeHtml(it.name) : ''}${it.notes ? ' <span class="lanc-has-notes" title="Tem detalhes">📝</span>' : ''}</span>
+                    <span class="lanc-day-item-meta">${escapeHtml(it.campaignName)}</span>
+                    <button class="lanc-day-edit-btn" data-edit-id="${it.id}" title="Detalhar / editar / mover">✏️</button>
+                    <button class="content-item-remove" data-del-id="${it.id}" data-del-field="${it.field}" data-del-campaign="${it.campaignId}" title="Remover">×</button>
+                  </div>
+                  <div class="lanc-day-checks">
+                    <button class="lanc-check ${it.recorded ? 'on' : ''}" data-check-id="${it.id}" data-check-field="${it.field}" data-check-campaign="${it.campaignId}" data-check-prop="recorded" type="button">🎥 Gravado</button>
+                    <button class="lanc-check ${it.edited ? 'on' : ''}" data-check-id="${it.id}" data-check-field="${it.field}" data-check-campaign="${it.campaignId}" data-check-prop="edited" type="button">✂️ Editado</button>
+                    <button class="lanc-check check-posted ${it.posted ? 'on' : ''}" data-check-id="${it.id}" data-check-field="${it.field}" data-check-campaign="${it.campaignId}" data-check-prop="posted" type="button">✓ Postado</button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -9860,13 +9888,41 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
       if (!item) return;
       item.name = (modal.querySelector('#editName').value || '').trim();
       item.notes = (modal.querySelector('#editNotes').value || '').trim();
+      const newDate = modal.querySelector('#editDate')?.value || item.publishDate;
+      let moved = false;
+      if (newDate && newDate !== item.publishDate) {
+        if (newDate.slice(0, 7) !== dateISO.slice(0, 7)) {
+          showToast(`Só dá pra mover dentro de ${ctx.month}`);
+          return;
+        }
+        item.publishDate = newDate;
+        moved = true;
+      }
       showAutosaveStatus('saving');
       await upsertModel(ctx.year, m);
       showAutosaveStatus('saved');
-      showToast('Conteúdo detalhado ✓');
+      showToast(moved ? 'Conteúdo movido ✓' : 'Conteúdo detalhado ✓');
       lancState.editId = null;
+      if (moved && backToCalendar) { backToCalendar(); return; }
       renderForm();
     };
+
+    // Marcar/desmarcar Gravado / Editado / Postado
+    modal.querySelectorAll('[data-check-id]').forEach(btn => {
+      btn.onclick = async () => {
+        const m = monthModels.find(x => x.id === btn.dataset.checkCampaign);
+        if (!m) return;
+        const field = btn.dataset.checkField;
+        const item = (m[field] || []).find(x => x.id === btn.dataset.checkId);
+        if (!item) return;
+        const prop = btn.dataset.checkProp;
+        item[prop] = !item[prop];
+        btn.classList.toggle('on', item[prop]);
+        showAutosaveStatus('saving');
+        await upsertModel(ctx.year, m);
+        showAutosaveStatus('saved');
+      };
+    });
 
     const saveBtn = modal.querySelector('#lancSave');
     if (saveBtn) saveBtn.onclick = async () => {
