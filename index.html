@@ -3384,6 +3384,99 @@ window.ANTHROPIC_API_KEY = ''; // Cole sua API key aqui (formato: sk-ant-api03-.
   }
   /* ============== END CAMPAIGN PERIOD BANDS ============== */
 
+  /* ============== CAMPAIGN STRIP (chips pra editar campanha do mês) ============== */
+  .camp-strip {
+    margin: 0 0 18px 0;
+    padding: 14px 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .camp-strip-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .camp-strip-label span {
+    color: var(--text-3);
+    letter-spacing: 0.12em;
+    text-transform: none;
+  }
+  .camp-strip-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .camp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 3px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 100%;
+  }
+  .camp-chip:hover {
+    background: var(--surface-2);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+  }
+  .camp-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .camp-chip-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+  }
+  .camp-chip-period {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .camp-chip-edit { font-size: 11px; opacity: 0.55; }
+  .camp-chip:hover .camp-chip-edit { opacity: 1; }
+  @media (max-width: 640px) {
+    .camp-chip-name { max-width: 130px; }
+    .camp-strip-label span { display: none; }
+  }
+  /* ============== END CAMPAIGN STRIP ============== */
+
+  /* ============== CALENDAR DRAG & DROP ============== */
+  .cal-cell-item[data-item-id] { cursor: grab; }
+  .cal-cell-item[data-item-id]:hover {
+    filter: brightness(1.18);
+    outline: 1px solid var(--border-strong);
+  }
+  .cal-cell-item.cal-item-dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .cal-cell-period[data-open-camp] { cursor: pointer; }
+  .cal-cell-period[data-open-camp]:hover { filter: brightness(1.25); }
+  /* Enquanto arrasta: destaca os dias como alvo possível */
+  .cal-dragging .cal-cell[data-cal-date] {
+    outline: 1px dashed var(--border);
+    outline-offset: -2px;
+  }
+  .cal-dragging .cal-cell .cal-cell-add { opacity: 0 !important; }
+  .cal-cell.cal-cell-drop {
+    outline: 2px solid var(--gold) !important;
+    outline-offset: -2px;
+    background: var(--gold-glow) !important;
+  }
+  /* ============== END CALENDAR DRAG & DROP ============== */
+
   /* ============== END CAMPAIGN CALENDAR ============== */
 
   /* ============== GRUPO VIP ============== */
@@ -7383,6 +7476,30 @@ function renderRemessaCalendar(root, r) {
       </div>
     </div>
 
+    ${monthModels.length > 0 ? `
+      <div class="camp-strip">
+        <div class="camp-strip-label">Campanhas de ${state.currentMonth} <span>· clique pra editar nome, período ou apagar</span></div>
+        <div class="camp-strip-chips">
+          ${monthModels.map(m => {
+            const color = m.isVipGroup ? CONTENT_COLORS.vip : pickCampaignColor(m.id);
+            const fmtD = (iso) => iso ? iso.split('-')[2].replace(/^0/, '') : null;
+            const period = (!m.isVipGroup && m.campaignStart && m.campaignEnd)
+              ? `${fmtD(m.campaignStart)} → ${fmtD(m.campaignEnd)}`
+              : (m.isVipGroup ? 'mês inteiro' : 'sem período');
+            return `
+              <button type="button" class="camp-chip" data-edit-camp="${m.id}"
+                      style="border-left-color:${color};"
+                      title="Editar ${escapeHtml(m.name || 'campanha')}">
+                <span class="camp-chip-dot" style="background:${color}"></span>
+                <span class="camp-chip-name">${m.isVipGroup ? '💎 ' : ''}${escapeHtml(m.name || 'Sem nome')}</span>
+                <span class="camp-chip-period">${period}</span>
+                <span class="camp-chip-edit">✏️</span>
+              </button>`;
+          }).join('')}
+        </div>
+      </div>
+    ` : ''}
+
     <div id="calInlineWrap" class="cal-inline-wrap">
       ${renderCampaignCalendarHTML(ctx)}
     </div>
@@ -7436,6 +7553,17 @@ function renderRemessaCalendar(root, r) {
   root.querySelectorAll('[data-cal-date]').forEach(cell => {
     cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, () => { closeModal(); renderRemessaView(); });
   });
+
+  // Chips das campanhas do mês → abre a campanha pra editar
+  root.querySelectorAll('[data-edit-camp]').forEach(chip => {
+    chip.onclick = () => {
+      openModelModal(chip.dataset.editCamp);
+      document.getElementById('modalBg')?.classList.add('show');
+    };
+  });
+
+  // Clique na faixa da campanha, clique no conteúdo, arrastar conteúdo entre dias
+  bindCalendarInteractions(root, ctx, () => renderRemessaView());
 }
 
 function renderRemessaView() {
@@ -8275,17 +8403,17 @@ function buildMonthCalendarData(year, remessaId, monthName, scope = 'all') {
     // Configurações por kind
     const kinds = isVip
       ? [
-          { arr: m.videos, kind: 'video', icon: '🎥' },
-          { arr: m.photos, kind: 'photo', icon: '📷' },
-          { arr: m.polls,  kind: 'poll',  icon: '📊' }
+          { arr: m.videos, kind: 'video', field: 'videos', icon: '🎥' },
+          { arr: m.photos, kind: 'photo', field: 'photos', icon: '📷' },
+          { arr: m.polls,  kind: 'poll',  field: 'polls',  icon: '📊' }
         ]
       : [
-          { arr: m.stories,   kind: 'story',     icon: '📱' },
-          { arr: m.reels,     kind: 'reel',      icon: '🎞' },
-          { arr: m.carrossel, kind: 'carrossel', icon: '🖼' }
+          { arr: m.stories,   kind: 'story',     field: 'stories',   icon: '📱' },
+          { arr: m.reels,     kind: 'reel',      field: 'reels',     icon: '🎞' },
+          { arr: m.carrossel, kind: 'carrossel', field: 'carrossel', icon: '🖼' }
         ];
 
-    kinds.forEach(({ arr, kind, icon }) => {
+    kinds.forEach(({ arr, kind, icon, field }) => {
       (arr || []).forEach(item => {
         if (!item.publishDate) return;
         const [yStr, mStr, dStr] = item.publishDate.split('-');
@@ -8294,7 +8422,7 @@ function buildMonthCalendarData(year, remessaId, monthName, scope = 'all') {
           if (!dayMap[day]) dayMap[day] = [];
           dayMap[day].push({
             ...item,
-            kind, icon,
+            kind, icon, field,
             isVip,
             campaignName,
             campaignId: m.id
@@ -8393,7 +8521,8 @@ function renderCampaignCalendarHTML(ctx) {
               const isEnd = d === p.endDay;
               return `<div class="cal-cell-period ${isStart ? 'period-start' : ''} ${isEnd ? 'period-end' : ''}"
                        style="background: ${p.color};"
-                       title="${escapeHtml(p.name)} · ${p.startDay} → ${p.endDay}">
+                       data-open-camp="${p.id}"
+                       title="${escapeHtml(p.name)} · dia ${p.startDay} → ${p.endDay} · clique pra editar a campanha">
                 <span class="cal-cell-period-name">${escapeHtml(p.name)}</span>
               </div>`;
             }).join('')}
@@ -8403,9 +8532,14 @@ function renderCampaignCalendarHTML(ctx) {
           ${items.map(it => {
             const kindLabel = contentTypeLabel(it.kind, it.isVip);
             const color = contentColor(it.kind, it.isVip);
-            const itemTitle = `${kindLabel}${it.isVip ? ' (Grupo VIP)' : ''}: ${it.name || kindLabel} · Campanha: ${it.campaignName}`;
+            const itemTitle = `${kindLabel}${it.isVip ? ' (Grupo VIP)' : ''}: ${it.name || kindLabel} · Campanha: ${it.campaignName}\nArraste pra outro dia · clique pra editar`;
             return `
-              <div class="cal-cell-item ${it.posted ? 'posted' : ''}" title="${escapeHtml(itemTitle)}" style="border-left-color:${color}; background:${color}1f;">
+              <div class="cal-cell-item ${it.posted ? 'posted' : ''}" title="${escapeHtml(itemTitle)}" style="border-left-color:${color}; background:${color}1f;"
+                   draggable="true"
+                   data-item-id="${it.id}"
+                   data-item-field="${it.field}"
+                   data-item-camp="${it.campaignId}"
+                   data-item-date="${cellDate}">
                 <span class="cal-cell-dot" style="background:${color}"></span>
                 <span class="cal-cell-name"><strong class="cal-cell-kind" style="color:${color}">${kindLabel}</strong>${it.name ? ' · ' + escapeHtml(it.name) : ''}</span>
               </div>
@@ -8468,6 +8602,107 @@ function renderCampaignCalendarHTML(ctx) {
       </div>
     </div>
   `;
+}
+
+// ============================================================
+// INTERAÇÕES DO CALENDÁRIO — editar campanha, editar item, arrastar item de dia
+// Usado tanto no calendário principal (renderRemessaCalendar) quanto no
+// calendário cheio (openMonthCalendar).
+// ============================================================
+
+// Move um conteúdo pra outro dia. Retorna true se moveu.
+async function moveContentToDay(ctx, campaignId, field, itemId, newDateISO) {
+  const m = findModel(ctx.year, campaignId);
+  if (!m) { showToast('Campanha não encontrada'); return false; }
+  if (!canEditModel(m)) { showToast('Sem permissão pra mover'); return false; }
+  const item = (m[field] || []).find(x => x.id === itemId);
+  if (!item) return false;
+  if (item.publishDate === newDateISO) return false;
+  // Campanha é vinculada ao mês — só move dentro do mesmo mês
+  if (String(newDateISO).slice(0, 7) !== String(item.publishDate).slice(0, 7)) {
+    showToast(`Só dá pra mover dentro de ${ctx.month}`);
+    return false;
+  }
+  item.publishDate = newDateISO;
+  showAutosaveStatus('saving');
+  await upsertModel(ctx.year, m);
+  showAutosaveStatus('saved');
+  showToast('Conteúdo movido ✓');
+  return true;
+}
+
+// Liga todos os cliques/arrastes do calendário. `rerender` é chamado após mover.
+function bindCalendarInteractions(root, ctx, rerender) {
+  if (!root) return;
+
+  // 1) Clique na faixa colorida da campanha → abre a campanha pra editar
+  root.querySelectorAll('[data-open-camp]').forEach(band => {
+    band.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const modalBg = document.getElementById('modalBg');
+      const modal = document.getElementById('modalContent');
+      if (modal) modal.classList.remove('modal-fullscreen');
+      openModelModal(band.dataset.openCamp);
+      if (modalBg) modalBg.classList.add('show');
+    };
+  });
+
+  // 2) Clique num conteúdo → abre direto a edição daquele item
+  root.querySelectorAll('.cal-cell-item[data-item-id]').forEach(el => {
+    el.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openLancamentoConteudo(el.dataset.itemDate, ctx, rerender, el.dataset.itemId);
+    };
+  });
+
+  // 3) Arrastar conteúdo de um dia pro outro
+  if (!canUser('edit')) return;
+  let dragPayload = null;
+
+  root.querySelectorAll('.cal-cell-item[data-item-id]').forEach(el => {
+    el.ondragstart = (e) => {
+      dragPayload = {
+        id: el.dataset.itemId,
+        field: el.dataset.itemField,
+        camp: el.dataset.itemCamp,
+        from: el.dataset.itemDate
+      };
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', dragPayload.id); } catch (_) {}
+      el.classList.add('cal-item-dragging');
+      root.classList.add('cal-dragging');
+    };
+    el.ondragend = () => {
+      el.classList.remove('cal-item-dragging');
+      root.classList.remove('cal-dragging');
+      root.querySelectorAll('.cal-cell-drop').forEach(c => c.classList.remove('cal-cell-drop'));
+      dragPayload = null;
+    };
+  });
+
+  root.querySelectorAll('[data-cal-date]').forEach(cell => {
+    cell.ondragover = (e) => {
+      if (!dragPayload) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (cell.dataset.calDate !== dragPayload.from) cell.classList.add('cal-cell-drop');
+    };
+    cell.ondragleave = () => cell.classList.remove('cal-cell-drop');
+    cell.ondrop = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cell.classList.remove('cal-cell-drop');
+      if (!dragPayload) return;
+      const p = dragPayload;
+      dragPayload = null;
+      root.classList.remove('cal-dragging');
+      if (cell.dataset.calDate === p.from) return;
+      const moved = await moveContentToDay(ctx, p.camp, p.field, p.id, cell.dataset.calDate);
+      if (moved && rerender) rerender();
+    };
+  });
 }
 
 function openModelModal(modelId, defaultCategory, extraDefaults) {
@@ -9648,6 +9883,8 @@ function openMonthCalendar() {
     modal.querySelectorAll('[data-cal-date]').forEach(cell => {
       cell.onclick = () => openLancamentoConteudo(cell.dataset.calDate, ctx, render);
     });
+    // Clique na campanha → editar; clique/arraste no conteúdo → editar/mover
+    bindCalendarInteractions(modal, ctx, render);
     // Botão geral de lançar (usa o dia de hoje, ou o 1º do mês se hoje não for desse mês)
     const lancBtn = modal.querySelector('#calLancarBtn');
     if (lancBtn) lancBtn.onclick = () => {
@@ -9670,7 +9907,7 @@ function openMonthCalendar() {
 // ============================================================
 let lancState = { campaignId: null, kind: null };
 
-function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
+function openLancamentoConteudo(dateISO, ctx, backToCalendar, presetEditId) {
   const modal = document.getElementById('modalContent');
   const modalBg = document.getElementById('modalBg');
   if (!modal) return;
@@ -9707,7 +9944,8 @@ function openLancamentoConteudo(dateISO, ctx, backToCalendar) {
   })();
 
   // Estado de edição de um item já lançado
-  lancState.editId = null;
+  // (se veio de um clique direto no conteúdo do calendário, já abre editando ele)
+  lancState.editId = presetEditId || null;
 
   const computeItemsNoDia = () => {
     const out = [];
